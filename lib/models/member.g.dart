@@ -8,7 +8,7 @@ part of 'member.dart';
 
 class MemberAdapter extends TypeAdapter<Member> {
   @override
-  final int typeId = 0;
+  final int typeId = 1;
 
   @override
   Member read(BinaryReader reader) {
@@ -20,19 +20,25 @@ class MemberAdapter extends TypeAdapter<Member> {
       id: fields[0] as int,
       name: fields[1] as String,
       phone: fields[2] as String,
+      joinedDate: fields[3] as DateTime,
+      validTill: fields[4] as DateTime,
     );
   }
 
   @override
   void write(BinaryWriter writer, Member obj) {
     writer
-      ..writeByte(3)
+      ..writeByte(5)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
       ..write(obj.name)
       ..writeByte(2)
-      ..write(obj.phone);
+      ..write(obj.phone)
+      ..writeByte(3)
+      ..write(obj.joinedDate)
+      ..writeByte(4)
+      ..write(obj.validTill);
   }
 
   @override

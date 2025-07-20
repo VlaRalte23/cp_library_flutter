@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
-import 'package:library_chawnpui/models/book.dart';
-import 'package:library_chawnpui/models/member.dart';
-import 'package:library_chawnpui/widgets/dashboard_widget.dart';
 import 'package:intl/intl.dart';
+import 'package:library_chawnpui/helper/hive_services.dart';
+import 'package:library_chawnpui/pages/book_page.dart';
+import 'package:library_chawnpui/pages/magazine_page.dart';
+import 'package:library_chawnpui/pages/member_page.dart';
+import 'package:library_chawnpui/pages/newspaper_page.dart';
+import 'package:library_chawnpui/pages/issued_page.dart';
+import 'package:library_chawnpui/pages/returned_page.dart';
+import 'package:library_chawnpui/pages/not_returned_page.dart';
+import 'package:library_chawnpui/widgets/dashboard_widget.dart';
 
 class LibraryDashboardPage extends StatefulWidget {
   const LibraryDashboardPage({super.key});
@@ -13,14 +18,32 @@ class LibraryDashboardPage extends StatefulWidget {
 }
 
 class _LibraryDashboardPageState extends State<LibraryDashboardPage> {
-  int selectedIndex = 0;
+  Widget _dashboardItem(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+    Widget targetPage,
+  ) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => targetPage),
+          );
+        },
+        child: dashboardCard(title, value, icon, color),
+      ),
+    );
+  }
+
+  final HiveService _hiveService = HiveService();
+
   int bookCount = 0;
-  int issuedCount = Hive.box<Book>(
-    'books',
-  ).values.where((b) => b.isIssued).length;
-  int returnCount = Hive.box<Book>(
-    'books',
-  ).values.where((b) => !b.isIssued).length;
+  int issuedCount = 0;
+  int returnCount = 0;
   int memberCount = 0;
 
   final nowDate = DateTime.now();
@@ -41,69 +64,173 @@ class _LibraryDashboardPageState extends State<LibraryDashboardPage> {
   void initState() {
     super.initState();
     formatDate = DateFormat.yMMMMd().format(nowDate);
-    loadBookState();
+    _updateCounts();
+    _hiveService.getBooksListenable().addListener(_updateCounts);
+    _hiveService.getMembersListenable().addListener(_updateCounts);
   }
 
-  void loadBookState() {
-    final box = Hive.box<Book>('books');
-    final books = box.values.toList();
+  @override
+  void dispose() {
+    _hiveService.getBooksListenable().removeListener(_updateCounts);
+    _hiveService.getMembersListenable().removeListener(_updateCounts);
+    super.dispose();
+  }
+
+  void _updateCounts() {
+    final books = _hiveService.getAllBooks();
+    final members = _hiveService.getAllMembers();
+
     setState(() {
       bookCount = books.length;
       issuedCount = books.where((b) => b.isIssued).length;
+      returnCount = books.where((b) => !b.isIssued).length;
+      memberCount = members.length;
     });
   }
 
-  void loadMemberState() {
-    final memberBox = Hive.box<Member>('member');
-    final members = memberBox.values.toList();
-    setState(() {
-      memberCount = members.length;
-    });
+  Widget _buildDashboardBody() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        double maxCardWidth = 180;
+        int cardsPerRow = (constraints.maxWidth / maxCardWidth).floor();
+
+        return GridView.count(
+          crossAxisCount: cardsPerRow > 0 ? cardsPerRow : 1,
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 16,
+          padding: const EdgeInsets.all(16),
+          children: [
+            _dashboardItem(
+              "Books",
+              "$bookCount",
+              Icons.book,
+              Colors.blue,
+              const BookPage(),
+            ),
+            _dashboardItem(
+              "Members",
+              "$memberCount",
+              Icons.people,
+              Colors.green,
+              const MemberPage(),
+            ),
+            _dashboardItem(
+              "NewsPapers",
+              "1",
+              Icons.newspaper,
+              Colors.orange,
+              const NewspaperPage(),
+            ),
+            _dashboardItem(
+              "Magazines",
+              "0",
+              Icons.insert_drive_file,
+              Colors.red,
+              const MagazinePage(),
+            ),
+            _dashboardItem(
+              "ISSUED",
+              "$issuedCount",
+              Icons.flight,
+              Colors.lightBlue,
+              const IssuedPage(),
+            ),
+            _dashboardItem(
+              "RETURNED",
+              "$returnCount",
+              Icons.thumb_up,
+              Colors.redAccent,
+              const ReturnedPage(),
+            ),
+            _dashboardItem(
+              "NOT RETURNED",
+              "1",
+              Icons.thumb_down,
+              Colors.green,
+              const NotReturnedPage(),
+            ),
+            dashboardCard(
+              "DATE TODAY",
+              formatDate,
+              Icons.calendar_today,
+              Colors.orange,
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _handleDrawerTap(BuildContext context, String title) {
+    Navigator.pop(context); // Close drawer
+
+    if (title == "Dashboard") {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const LibraryDashboardPage()),
+      );
+    } else if (title == "Members") {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const MemberPage()),
+      );
+    } else if (title == "Books") {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const BookPage()),
+      );
+    } else if (title == "Magazines") {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const MagazinePage()),
+      );
+    } else if (title == "Newspapers") {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const NewspaperPage()),
+      );
+    } else if (title == "Issued") {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const IssuedPage()),
+      );
+    } else if (title == "Returned") {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const ReturnedPage()),
+      );
+    } else if (title == "Not Returned") {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const NotReturnedPage()),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawer: Container(
-        color: Colors.white,
-        child: Drawer(
-          child: Column(
-            children: [
-              const DrawerHeader(
-                decoration: BoxDecoration(
-                  color: Color.fromARGB(255, 255, 255, 255),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.account_circle,
-                      size: 50,
-                      color: Color.fromARGB(255, 100, 98, 98),
-                    ),
-                    SizedBox(width: 10),
-                    Text(
-                      "Admin",
-                      style: TextStyle(
-                        color: Color.fromARGB(255, 0, 0, 0),
-                        fontSize: 18,
-                      ),
-                    ),
-                  ],
-                ),
+      drawer: Drawer(
+        child: Column(
+          children: [
+            const DrawerHeader(
+              decoration: BoxDecoration(color: Colors.white),
+              child: Row(
+                children: [
+                  Icon(Icons.account_circle, size: 50, color: Colors.grey),
+                  SizedBox(width: 10),
+                  Text("Admin", style: TextStyle(fontSize: 18)),
+                ],
               ),
-              ...menuItems.map(
-                (title) => ListTile(
-                  leading: const Icon(Icons.chevron_right),
-                  title: Text(title),
-                  selected: menuItems[selectedIndex] == title,
-                  onTap: () {
-                    setState(() => selectedIndex = menuItems.indexOf(title));
-                    Navigator.pop(context);
-                  },
-                ),
+            ),
+            ...menuItems.map(
+              (item) => ListTile(
+                leading: const Icon(Icons.chevron_right),
+                title: Text(item),
+                onTap: () => _handleDrawerTap(context, item),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
       appBar: AppBar(
@@ -114,8 +241,8 @@ class _LibraryDashboardPageState extends State<LibraryDashboardPage> {
             const Text(
               " Chawnpui Branch YMA Library",
               style: TextStyle(
-                color: Color.fromARGB(255, 0, 0, 0),
                 fontWeight: FontWeight.w600,
+                color: Colors.black,
               ),
             ),
           ],
@@ -124,9 +251,9 @@ class _LibraryDashboardPageState extends State<LibraryDashboardPage> {
           decoration: const BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                Color.fromARGB(255, 197, 41, 41), // Blue
-                Color.fromARGB(255, 255, 255, 255), // Light Blue
-                Color.fromARGB(255, 0, 0, 0), // Cyan
+                Color.fromARGB(255, 197, 41, 41),
+                Color.fromARGB(255, 255, 255, 255),
+                Color.fromARGB(255, 0, 0, 0),
               ],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
@@ -136,56 +263,8 @@ class _LibraryDashboardPageState extends State<LibraryDashboardPage> {
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          // Adjust the number of cards per row based on screen width
-          double maxCardWidth = 180;
-          int cardsPerRow = (constraints.maxWidth / maxCardWidth).floor();
-
-          return GridView.count(
-            crossAxisCount: cardsPerRow > 0 ? cardsPerRow : 1,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-            padding: const EdgeInsets.all(16),
-            children: [
-              dashboardCard("Books", "$bookCount", Icons.book, Colors.blue),
-              dashboardCard(
-                "Members",
-                "$memberCount",
-                Icons.people,
-                Colors.green,
-              ),
-              dashboardCard("NewsPapers", "1", Icons.newspaper, Colors.orange),
-              dashboardCard(
-                "Magazines",
-                "0",
-                Icons.insert_drive_file,
-                Colors.red,
-              ),
-              dashboardCard(
-                "ISSUED",
-                "$issuedCount",
-                Icons.flight,
-                Colors.lightBlue,
-              ),
-              dashboardCard("RETURNED", "1", Icons.thumb_up, Colors.redAccent),
-              dashboardCard(
-                "NOT RETURNED",
-                "1",
-                Icons.thumb_down,
-                Colors.green,
-              ),
-              dashboardCard(
-                "DATE TODAY",
-                formatDate,
-                Icons.calendar_today,
-                Colors.orange,
-              ),
-            ],
-          );
-        },
-      ),
-      bottomNavigationBar: BottomAppBar(
+      body: _buildDashboardBody(),
+      bottomNavigationBar: const BottomAppBar(
         child: Center(
           child: Text('Chawnpui Branch YMA Literature sub-committee 2025'),
         ),
