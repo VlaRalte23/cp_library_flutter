@@ -1,10 +1,8 @@
-// services/hive_service.dart
 import 'dart:developer';
-
 import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/book.dart';
-import '../models/member.dart'; // Import the Member model
+import '../models/member.dart';
 
 class HiveService {
   // Singleton pattern: Ensure only one instance of HiveService exists.

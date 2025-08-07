@@ -17,7 +17,7 @@ class Member extends HiveObject {
   DateTime joinedDate;
 
   @HiveField(4)
-  DateTime validTill;
+  DateTime? validTill;
 
   Member({
     required this.id,
@@ -27,5 +27,5 @@ class Member extends HiveObject {
     required this.validTill,
   });
 
-  bool get isActive => validTill.isAfter(DateTime.now());
+  bool get isActive => validTill!.isAfter(DateTime.now());
 }

@@ -36,9 +36,9 @@ class _AddMemberDialogState extends State<AddMemberDialog> {
 
       try {
         await memberBox.add(member);
-        if (context.mounted) Navigator.pop(context);
+        if (mounted) Navigator.pop(context);
       } catch (e) {
-        if (context.mounted) {
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Failed to add member.')),
           );

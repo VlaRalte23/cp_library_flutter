@@ -12,6 +12,7 @@ void main() async {
   Hive.registerAdapter(MemberAdapter());
   Hive.registerAdapter(BookAdapter());
   await Hive.openBox<Member>('member');
+
   await Hive.openBox<Book>('books');
   await HiveService().init();
 

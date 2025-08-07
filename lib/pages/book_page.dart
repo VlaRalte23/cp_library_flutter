@@ -138,15 +138,17 @@ class _BookPageState extends State<BookPage> {
                 Navigator.of(dialogContext).pop(); // Close the dialog
                 try {
                   await _hiveService.deleteBook(bookId);
-                  if (mounted) {
+                  if (context.mounted) {
                     _showSnackBar(context, 'Book deleted successfully!');
                   }
                 } catch (e) {
-                  _showSnackBar(
-                    context,
-                    'Failed to delete book: $e',
-                    isError: true,
-                  );
+                  if (context.mounted) {
+                    _showSnackBar(
+                      context,
+                      'Failed to delete book: $e',
+                      isError: true,
+                    );
+                  }
                 }
               },
             ),
