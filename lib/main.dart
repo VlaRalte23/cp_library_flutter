@@ -1,20 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import 'package:library_chawnpui/helper/hive_services.dart';
-import 'package:library_chawnpui/models/book.dart';
-import 'package:library_chawnpui/models/member.dart';
 import 'package:library_chawnpui/pages/dashboard.dart';
+import 'package:path/path.dart';
+import 'package:sqflite/sqflite.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Hive.initFlutter();
 
-  Hive.registerAdapter(MemberAdapter());
-  Hive.registerAdapter(BookAdapter());
-  await Hive.openBox<Member>('member');
-
-  await Hive.openBox<Book>('books');
-  await HiveService().init();
+  final dbPath = await getDatabasesPath();
+  final path = join(dbPath, 'books.db');
+  debugPrint('Sqlite Database located at: $path');
 
   runApp(const LibraryApp());
 }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
+import 'package:library_chawnpui/helper/member_database.dart';
 import 'package:library_chawnpui/models/member.dart';
 
 class AddMemberDialog extends StatefulWidget {
@@ -23,11 +23,8 @@ class _AddMemberDialogState extends State<AddMemberDialog> {
 
   Future<void> _saveMember() async {
     if (_formKey.currentState!.validate()) {
-      final memberBox = Hive.box<Member>('member');
-      final id = DateTime.now().millisecondsSinceEpoch;
       final now = DateTime.now();
       final member = Member(
-        id: id,
         name: _nameController.text.trim(),
         phone: _phoneController.text.trim(),
         joinedDate: now,
@@ -35,14 +32,15 @@ class _AddMemberDialogState extends State<AddMemberDialog> {
       );
 
       try {
-        await memberBox.add(member);
-        if (mounted) Navigator.pop(context);
+        await MemberDatabase.instance.createMember(member);
+
+        if (!mounted) return;
+        Navigator.pop(context, true);
       } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Failed to add member.')),
-          );
-        }
+        if (!mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to add member: $e')));
       }
     }
   }
@@ -59,16 +57,14 @@ class _AddMemberDialogState extends State<AddMemberDialog> {
             TextFormField(
               controller: _nameController,
               decoration: const InputDecoration(labelText: 'Name'),
-              validator: (value) => value == null || value.trim().isEmpty
-                  ? 'Name is required'
-                  : null,
+              validator: (value) =>
+                  value == null || value.isEmpty ? 'Enter a name' : null,
             ),
             TextFormField(
               controller: _phoneController,
-              decoration: const InputDecoration(labelText: 'Phone Number'),
-              keyboardType: TextInputType.phone,
-              validator: (value) => value == null || value.trim().isEmpty
-                  ? 'Phone is required'
+              decoration: const InputDecoration(labelText: 'Phone'),
+              validator: (value) => value == null || value.isEmpty
+                  ? 'Enter a phone number'
                   : null,
             ),
           ],
@@ -76,10 +72,14 @@ class _AddMemberDialogState extends State<AddMemberDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text('Cancel', style: TextStyle(color: Colors.black)),
         ),
-        ElevatedButton(onPressed: _saveMember, child: const Text('Save')),
+        ElevatedButton(
+          onPressed: _saveMember,
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+          child: const Text('Save', style: TextStyle(color: Colors.black)),
+        ),
       ],
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:library_chawnpui/helper/hive_services.dart';
+import 'package:library_chawnpui/helper/book_database.dart';
+import 'package:library_chawnpui/helper/member_database.dart';
 import 'package:library_chawnpui/pages/book_page.dart';
 import 'package:library_chawnpui/pages/magazine_page.dart';
 import 'package:library_chawnpui/pages/member_page.dart';
@@ -18,29 +19,6 @@ class LibraryDashboardPage extends StatefulWidget {
 }
 
 class _LibraryDashboardPageState extends State<LibraryDashboardPage> {
-  Widget _dashboardItem(
-    String title,
-    String value,
-    IconData icon,
-    Color color,
-    Widget targetPage,
-  ) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => targetPage),
-          );
-        },
-        child: dashboardCard(title, value, icon, color),
-      ),
-    );
-  }
-
-  final HiveService _hiveService = HiveService();
-
   int bookCount = 0;
   int issuedCount = 0;
   int returnCount = 0;
@@ -65,20 +43,11 @@ class _LibraryDashboardPageState extends State<LibraryDashboardPage> {
     super.initState();
     formatDate = DateFormat.yMMMMd().format(nowDate);
     _updateCounts();
-    _hiveService.getBooksListenable().addListener(_updateCounts);
-    _hiveService.getMembersListenable().addListener(_updateCounts);
   }
 
-  @override
-  void dispose() {
-    _hiveService.getBooksListenable().removeListener(_updateCounts);
-    _hiveService.getMembersListenable().removeListener(_updateCounts);
-    super.dispose();
-  }
-
-  void _updateCounts() {
-    final books = _hiveService.getAllBooks();
-    final members = _hiveService.getAllMembers();
+  Future<void> _updateCounts() async {
+    final books = await BookDatabase.instance.getBooks();
+    final members = await MemberDatabase.instance.getMembers();
 
     setState(() {
       bookCount = books.length;
@@ -86,6 +55,27 @@ class _LibraryDashboardPageState extends State<LibraryDashboardPage> {
       returnCount = books.where((b) => !b.isIssued).length;
       memberCount = members.length;
     });
+  }
+
+  Widget _dashboardItem(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+    Widget targetPage,
+  ) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => targetPage),
+          ).then((_) => _updateCounts()); // 👈 Refresh counts after returning
+        },
+        child: dashboardCard(title, value, icon, color),
+      ),
+    );
   }
 
   Widget _buildDashboardBody() {
@@ -150,7 +140,7 @@ class _LibraryDashboardPageState extends State<LibraryDashboardPage> {
               const NotReturnedPage(),
             ),
             dashboardCard(
-              "DATE TODAY",
+              "TODAY",
               formatDate,
               Icons.calendar_today,
               Colors.orange,
@@ -173,37 +163,37 @@ class _LibraryDashboardPageState extends State<LibraryDashboardPage> {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => const MemberPage()),
-      );
+      ).then((_) => _updateCounts()); // 👈 refresh counts
     } else if (title == "Books") {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => const BookPage()),
-      );
+      ).then((_) => _updateCounts());
     } else if (title == "Magazines") {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => const MagazinePage()),
-      );
+      ).then((_) => _updateCounts());
     } else if (title == "Newspapers") {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => const NewspaperPage()),
-      );
+      ).then((_) => _updateCounts());
     } else if (title == "Issued") {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => const IssuedPage()),
-      );
+      ).then((_) => _updateCounts());
     } else if (title == "Returned") {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => const ReturnedPage()),
-      );
+      ).then((_) => _updateCounts());
     } else if (title == "Not Returned") {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => const NotReturnedPage()),
-      );
+      ).then((_) => _updateCounts());
     }
   }
 

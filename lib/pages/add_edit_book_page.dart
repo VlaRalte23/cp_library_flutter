@@ -1,6 +1,5 @@
-// pages/add_edit_book_page.dart
 import 'package:flutter/material.dart';
-import 'package:library_chawnpui/helper/hive_services.dart';
+import 'package:library_chawnpui/helper/book_database.dart';
 import '../models/book.dart';
 
 class AddEditBookPage extends StatefulWidget {
@@ -14,10 +13,10 @@ class AddEditBookPage extends StatefulWidget {
 
 class _AddEditBookPageState extends State<AddEditBookPage> {
   final _formKey = GlobalKey<FormState>();
+  final _idController = TextEditingController();
   final _titleController = TextEditingController();
   final _authorController = TextEditingController();
-  bool _isIssued = false; // For the new 'isIssued' field
-  final HiveService _hiveService = HiveService();
+  bool _isIssued = false;
 
   bool _isLoading = false;
 
@@ -26,6 +25,7 @@ class _AddEditBookPageState extends State<AddEditBookPage> {
     super.initState();
     if (widget.book != null) {
       // Populate fields if editing an existing book
+      _idController.text = widget.book!.id.toString();
       _titleController.text = widget.book!.title;
       _authorController.text = widget.book!.author;
       _isIssued = widget.book!.isIssued;
@@ -34,6 +34,7 @@ class _AddEditBookPageState extends State<AddEditBookPage> {
 
   @override
   void dispose() {
+    _idController.dispose();
     _titleController.dispose();
     _authorController.dispose();
     super.dispose();
@@ -41,43 +42,43 @@ class _AddEditBookPageState extends State<AddEditBookPage> {
 
   Future<void> _saveBook() async {
     if (_formKey.currentState!.validate()) {
-      setState(() {
-        _isLoading = true;
-      });
+      setState(() => _isLoading = true);
 
+      final id = int.tryParse(_idController.text.trim());
       final title = _titleController.text.trim();
       final author = _authorController.text.trim();
 
-      // If editing, use the existing ID; otherwise, pass 0 and HiveService will generate a new one.
-      final bookId = widget.book?.id ?? 0;
+      if (id == null) {
+        _showSnackBar('Please enter a valid numeric ID.', isError: true);
+        setState(() => _isLoading = false);
+        return;
+      }
 
       final book = Book(
-        id: bookId,
+        id: id,
         title: title,
         author: author,
         isIssued: _isIssued,
       );
 
       try {
+        final db = BookDatabase.instance;
+
         if (widget.book == null) {
           // Add new book
-          await _hiveService.addBook(book);
+          await db.insertBook(book);
           _showSnackBar('Book added successfully!');
         } else {
           // Update existing book
-          await _hiveService.updateBook(book);
+          await db.updateBook(book);
           _showSnackBar('Book updated successfully!');
         }
-        if (mounted) {
-          Navigator.pop(context);
-        }
-        // Go back to BookPage
+
+        if (mounted) Navigator.pop(context);
       } catch (e) {
         _showSnackBar('Failed to save book: $e', isError: true);
       } finally {
-        setState(() {
-          _isLoading = false;
-        });
+        setState(() => _isLoading = false);
       }
     }
   }
@@ -94,9 +95,11 @@ class _AddEditBookPageState extends State<AddEditBookPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isEditing = widget.book != null;
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.book == null ? 'Add New Book' : 'Edit Book'),
+        title: Text(isEditing ? 'Edit Book' : 'Add New Book'),
         centerTitle: true,
         backgroundColor: Theme.of(context).primaryColor,
         foregroundColor: Colors.white,
@@ -107,6 +110,30 @@ class _AddEditBookPageState extends State<AddEditBookPage> {
           key: _formKey,
           child: ListView(
             children: <Widget>[
+              // ✅ ID Field (manual entry)
+              TextFormField(
+                controller: _idController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: 'Book ID',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  prefixIcon: const Icon(Icons.confirmation_number),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a book ID';
+                  }
+                  if (int.tryParse(value) == null) {
+                    return 'Book ID must be a number';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+
+              // Title Field
               TextFormField(
                 controller: _titleController,
                 decoration: InputDecoration(
@@ -124,6 +151,8 @@ class _AddEditBookPageState extends State<AddEditBookPage> {
                 },
               ),
               const SizedBox(height: 16),
+
+              // Author Field
               TextFormField(
                 controller: _authorController,
                 decoration: InputDecoration(
@@ -141,17 +170,17 @@ class _AddEditBookPageState extends State<AddEditBookPage> {
                 },
               ),
               const SizedBox(height: 16),
+
+              // Is Issued Switch
               SwitchListTile(
                 title: const Text('Is Issued?'),
                 value: _isIssued,
-                onChanged: (bool value) {
-                  setState(() {
-                    _isIssued = value;
-                  });
-                },
+                onChanged: (value) => setState(() => _isIssued = value),
                 secondary: const Icon(Icons.assignment),
               ),
               const SizedBox(height: 24),
+
+              // Save Button
               _isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : ElevatedButton.icon(
@@ -166,7 +195,7 @@ class _AddEditBookPageState extends State<AddEditBookPage> {
                       ),
                       icon: const Icon(Icons.save),
                       label: Text(
-                        widget.book == null ? 'Add Book' : 'Update Book',
+                        isEditing ? 'Update Book' : 'Add Book',
                         style: const TextStyle(fontSize: 16),
                       ),
                     ),

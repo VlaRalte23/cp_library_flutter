@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:library_chawnpui/widgets/app_drawer.dart';
 
 class NewspaperPage extends StatelessWidget {
   const NewspaperPage({super.key});
@@ -7,8 +6,16 @@ class NewspaperPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Newspaper')),
-      drawer: AppDrawer(),
+      appBar: AppBar(
+        title: const Text('Newspaper'),
+        backgroundColor: Colors.orange,
+        leading: IconButton(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          icon: Icon(Icons.arrow_back),
+        ),
+      ),
       body: const Center(child: Text('List of Newspaper will go here')),
     );
   }

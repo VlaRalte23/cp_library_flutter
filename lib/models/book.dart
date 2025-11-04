@@ -1,19 +1,7 @@
-import 'package:hive/hive.dart';
-
-part 'book.g.dart';
-
-@HiveType(typeId: 0)
-class Book extends HiveObject {
-  @HiveField(0)
-  int id;
-
-  @HiveField(1)
-  String title;
-
-  @HiveField(2)
-  String author;
-
-  @HiveField(3)
+class Book {
+  final int id;
+  final String title;
+  final String author;
   bool isIssued;
 
   Book({
@@ -22,4 +10,24 @@ class Book extends HiveObject {
     required this.author,
     this.isIssued = false,
   });
+
+  // Map() -> Book
+  factory Book.fromMap(Map<String, dynamic> map) {
+    return Book(
+      id: map['id'],
+      title: map['title'],
+      author: map['author'],
+      isIssued: map['isIssued'] == 1,
+    );
+  }
+
+  // Book -> Map()
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'title': title,
+      'author': author,
+      'isIssued': isIssued ? 1 : 0,
+    };
+  }
 }

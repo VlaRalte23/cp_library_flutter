@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:library_chawnpui/widgets/app_drawer.dart';
 
 class NotReturnedPage extends StatelessWidget {
   const NotReturnedPage({super.key});
@@ -7,8 +6,19 @@ class NotReturnedPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Not Return Books')),
-      drawer: AppDrawer(),
+      appBar: AppBar(
+        title: const Text(
+          'Not Return Books',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+        backgroundColor: Colors.green,
+        leading: IconButton(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          icon: Icon(Icons.arrow_back),
+        ),
+      ),
       body: const Center(child: Text('List of Not Return books will go here')),
     );
   }
