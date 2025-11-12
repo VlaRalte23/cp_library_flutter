@@ -15,7 +15,6 @@ Future<void> main() async {
 
 class LibraryApp extends StatelessWidget {
   const LibraryApp({super.key});
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(

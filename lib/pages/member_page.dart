@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:library_chawnpui/helper/member_database.dart';
 import 'package:library_chawnpui/models/member.dart';
+import 'package:library_chawnpui/pages/member_detail_page.dart';
 import 'package:library_chawnpui/widgets/add_member_dialog.dart';
 
 class MemberPage extends StatefulWidget {
@@ -123,7 +124,7 @@ class _MemberPageState extends State<MemberPage> {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 8.0),
         child: Text(
-          isActive ? 'No active Members.' : 'No non-active Members',
+          isActive ? 'No active Members.' : 'No active Members',
           style: const TextStyle(color: Colors.grey),
         ),
       );
@@ -136,6 +137,9 @@ class _MemberPageState extends State<MemberPage> {
       itemBuilder: (context, index) {
         final member = members[index];
         return Card(
+          elevation: 2,
+          margin: const EdgeInsets.symmetric(vertical: 4),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           child: ListTile(
             leading: Icon(
               isActive ? Icons.person : Icons.person_off,
@@ -174,7 +178,9 @@ class _MemberPageState extends State<MemberPage> {
                   ),
                 );
 
-                if (!mounted) return;
+                if (!mounted) {
+                  return;
+                }
 
                 if (confirm == true) {
                   try {
@@ -202,9 +208,39 @@ class _MemberPageState extends State<MemberPage> {
               },
               icon: const Icon(Icons.delete, color: Colors.red),
             ),
+            onTap: () {
+              Navigator.of(context).push(_createSlideUpRoute(member));
+            },
           ),
         );
       },
+    );
+  }
+
+  Route _createSlideUpRoute(Member member) {
+    return PageRouteBuilder(
+      opaque: false, // Allows background to show through
+      barrierColor: Colors.black54, // Dim background like modal
+      pageBuilder: (context, animation, secondaryAnimation) =>
+          MemberDetailPage(member: member),
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        const begin = Offset(0.0, 1.0); // from bottom
+        const end = Offset.zero;
+        const curve = Curves.easeOutCubic;
+
+        final curvedAnimation = CurvedAnimation(
+          parent: animation,
+          curve: curve,
+          reverseCurve: Curves.easeInCubic, // smooth slide-down
+        );
+
+        return SlideTransition(
+          position: Tween(begin: begin, end: end).animate(curvedAnimation),
+          child: FadeTransition(opacity: curvedAnimation, child: child),
+        );
+      },
+      transitionDuration: const Duration(milliseconds: 400),
+      reverseTransitionDuration: const Duration(milliseconds: 300),
     );
   }
 }
