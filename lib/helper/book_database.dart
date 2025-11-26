@@ -34,7 +34,8 @@ class BookDatabase {
         title TEXT NOT NULL,
         author TEXT NOT NULL,
         isIssued INTEGER NOT NULL DEFAULT 0,
-        issuedTo INTEGER
+        issuedTo INTEGER,
+        dueDate TEXT
         )
     ''');
 
@@ -110,11 +111,14 @@ class BookDatabase {
   // Issue a Book to a Member
   Future<int> issueBook(int bookId, int memberId) async {
     final db = await instance.database;
+    final dueDate = DateTime.now().add(const Duration(days: 14));
+
     return await db.update(
       'books',
       {
         'isIssued': 1, // mark as Issued
-        'issuedTo': memberId, // Track with member has it
+        'issuedTo': memberId,
+        'dueDate': dueDate.toIso8601String(), // Track with member has it
       },
       where: 'id = ?',
       whereArgs: [bookId],
@@ -126,7 +130,19 @@ class BookDatabase {
     final db = await instance.database;
     return await db.update(
       'books',
-      {'isIssued': 0, 'issuedTo': null},
+      {'isIssued': 0, 'issuedTo': null, 'dueDate': null},
+      where: 'id = ?',
+      whereArgs: [bookId],
+    );
+  }
+
+  // Extend DueDate
+  Future<void> extendDueDate(int bookId, DateTime newDate) async {
+    final db = await instance.database;
+
+    await db.update(
+      'books',
+      {'dueDate': newDate.toIso8601String()},
       where: 'id = ?',
       whereArgs: [bookId],
     );

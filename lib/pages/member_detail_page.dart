@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:library_chawnpui/helper/book_database.dart';
 import 'package:library_chawnpui/models/member.dart';
 import 'package:library_chawnpui/models/book.dart';
@@ -22,12 +23,15 @@ class _MemberDetailPageState extends State<MemberDetailPage> {
 
   // Example placeholder for issued books:
   void _loadIssuedBooks() {
-    _issuedBooks = BookDatabase.instance.getBooksIssuedTo(widget.member.id!);
+    setState(() {
+      _issuedBooks = BookDatabase.instance.getBooksIssuedTo(widget.member.id!);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final member = widget.member;
+
     return Scaffold(
       appBar: AppBar(
         title: Text('${member.name} Details'),
@@ -96,19 +100,84 @@ class _MemberDetailPageState extends State<MemberDetailPage> {
                     itemCount: books.length,
                     itemBuilder: (context, index) {
                       final book = books[index];
+                      final isOverdue =
+                          book.dueDate != null &&
+                          book.dueDate!.isBefore(DateTime.now());
                       return Card(
+                        color: isOverdue ? Colors.red.shade100 : Colors.white,
                         margin: const EdgeInsets.symmetric(vertical: 4),
                         child: ListTile(
-                          leading: const Icon(Icons.book, color: Colors.green),
-                          title: Text(book.title),
-                          subtitle: Text('Author: ${book.author}'),
-                          trailing: TextButton(
-                            child: const Text('Return'),
-                            onPressed: () async {
-                              await BookDatabase.instance.returnBook(book.id);
-                              _loadIssuedBooks();
-                              setState(() {});
-                            },
+                          leading: Icon(
+                            Icons.book,
+                            color: isOverdue ? Colors.red : Colors.green,
+                          ),
+                          title: Text(
+                            book.title,
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Author: ${book.author}',
+                                style: TextStyle(fontWeight: FontWeight.w600),
+                              ),
+
+                              // New formatted due date
+                              Text(
+                                "Due: ${book.dueDate != null ? DateFormat('dd MMM yyyy').format(book.dueDate!) : 'No date'}",
+                                style: TextStyle(
+                                  color:
+                                      (book.dueDate != null &&
+                                          book.dueDate!.isBefore(
+                                            DateTime.now(),
+                                          ))
+                                      ? Colors.red
+                                      : Colors.black,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+
+                              // Extend Due Date button
+                              TextButton(
+                                onPressed: () async {
+                                  final selectedDate = await showDatePicker(
+                                    context: context,
+                                    initialDate: book.dueDate ?? DateTime.now(),
+                                    firstDate: DateTime.now(),
+                                    lastDate: DateTime.now().add(
+                                      Duration(days: 365),
+                                    ),
+                                  );
+
+                                  if (selectedDate != null) {
+                                    await BookDatabase.instance.extendDueDate(
+                                      book.id,
+                                      selectedDate,
+                                    );
+                                    _loadIssuedBooks(); // refresh
+                                    setState(() {});
+                                  }
+                                },
+                                child: const Text("Extend Due Date"),
+                              ),
+                            ],
+                          ),
+
+                          trailing: SizedBox(
+                            height: 70,
+                            width: 100,
+                            child: TextButton(
+                              child: const Text(
+                                'Return',
+                                style: TextStyle(fontSize: 18),
+                              ),
+                              onPressed: () async {
+                                await BookDatabase.instance.returnBook(book.id);
+                                _loadIssuedBooks();
+                                setState(() {});
+                              },
+                            ),
                           ),
                         ),
                       );
