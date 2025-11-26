@@ -1,3 +1,4 @@
+// import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:library_chawnpui/helper/book_database.dart';
 import '../models/book.dart';
@@ -18,11 +19,18 @@ class _BookPageState extends State<BookPage> {
   @override
   void initState() {
     super.initState();
+    _booksFuture = BookDatabase.instance.getBooks();
     _loadBooks();
   }
 
-  void _loadBooks() {
+  Future<void> _loadBooks() async {
+    // final db = await BookDatabase.instance.database;
+    // final rows = await db.rawQuery("SELECT * FROM books");
+    // print('BOOKS TABLE ROWS:');
+    // print(rows);
     _booksFuture = BookDatabase.instance.getBooks();
+    // final books = await _booksFuture;
+    // log(books.map((e) => e.toMap()).toList().toString());
   }
 
   void _applyFilter(String filter) {
@@ -92,7 +100,7 @@ class _BookPageState extends State<BookPage> {
             ),
           ),
 
-          // 🔘 Filter Buttons + ➕ Add Button
+          // Filter Buttons +  Add Button
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             child: Row(

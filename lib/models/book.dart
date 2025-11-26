@@ -19,8 +19,8 @@ class Book {
       id: map['id'],
       title: map['title'],
       author: map['author'],
-      // isIssued: map['isIssued'] == 1,
-      // issuedTo: map['issuedTo'],
+      isIssued: map['isIssued'] == 1,
+      issuedTo: map['issuedTo'],
     );
   }
 
@@ -30,8 +30,8 @@ class Book {
       'id': id,
       'title': title,
       'author': author,
-      // 'isIssued': isIssued ? 1 : 0,
-      // 'issuedTo': issuedTo,
+      'isIssued': isIssued ? 1 : 0,
+      'issuedTo': issuedTo,
     };
   }
 }

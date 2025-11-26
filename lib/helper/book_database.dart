@@ -1,3 +1,5 @@
+// import 'dart:developer';
+
 import 'package:library_chawnpui/models/book.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
@@ -18,6 +20,10 @@ class BookDatabase {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
 
+    // Temporary - force delete old db
+    // await deleteDatabase(path);
+    // log('Deleted old db at: $path');
+
     return await openDatabase(path, version: 1, onCreate: _createDB);
   }
 
@@ -31,6 +37,11 @@ class BookDatabase {
         issuedTo INTEGER
         )
     ''');
+
+    // Debug to Print schema to verify columns exist
+    // final schema = await db.rawQuery("PRAGMA table_info(books)");
+    // log("BOOKS TABLE SCHEMA: ");
+    // print(schema);
   }
 
   // Add Book
@@ -58,15 +69,15 @@ class BookDatabase {
   }
 
   // Issue a book to member
-  Future<int> issuedBook(int bookId, int memberId) async {
-    final db = await instance.database;
-    return await db.update(
-      'books',
-      {'isIssued': 1, 'issuedTo': memberId},
-      where: 'id = ?',
-      whereArgs: [bookId],
-    );
-  }
+  // Future<int> issuedBook(int bookId, int memberId) async {
+  //   final db = await instance.database;
+  //   return await db.update(
+  //     'books',
+  //     {'isIssued': 1, 'issuedTo': memberId},
+  //     where: 'id = ?',
+  //     whereArgs: [bookId],
+  //   );
+  // }
 
   // Return a book
   Future<int> returnBook(int bookId) async {

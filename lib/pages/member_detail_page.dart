@@ -134,7 +134,7 @@ class _MemberDetailPageState extends State<MemberDetailPage> {
   void _showIssueBookDialog(BuildContext context, int memberId) async {
     final books = await BookDatabase.instance.getBooks();
     final availableBooks = books
-        .where((book) => book.isIssued == 0)
+        .where((book) => book.isIssued == false)
         .toList(); // only available books
 
     if (availableBooks.isEmpty) {
@@ -148,44 +148,49 @@ class _MemberDetailPageState extends State<MemberDetailPage> {
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Select Book to Issue'),
-        content: StatefulBuilder(
-          builder: (context, setState) => DropdownButton<Book>(
-            isExpanded: true,
-            hint: const Text('Choose a book'),
-            value: selectedBook,
-            items: availableBooks.map((book) {
-              return DropdownMenuItem(value: book, child: Text(book.title));
-            }).toList(),
-            onChanged: (book) {
-              setState(() {
-                selectedBook = book;
-              });
-            },
-          ),
-        ),
-        actions: [
-          TextButton(
-            child: const Text('Cancel'),
-            onPressed: () => Navigator.pop(context),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-            onPressed: selectedBook == null
-                ? null
-                : () async {
-                    await BookDatabase.instance.issueBook(
-                      selectedBook!.id,
-                      memberId,
-                    );
-                    Navigator.pop(context);
-                    _loadIssuedBooks();
-                    setState(() {});
-                  },
-            child: const Text('Issue'),
-          ),
-        ],
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: const Text("Select Book to Issue"),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: DropdownButton<Book>(
+                isExpanded: true,
+                hint: const Text("Choose a book"),
+                value: selectedBook,
+                items: availableBooks.map((book) {
+                  return DropdownMenuItem<Book>(
+                    value: book,
+                    child: Text(book.title),
+                  );
+                }).toList(),
+                onChanged: (book) {
+                  setState(() => selectedBook = book);
+                },
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("Cancel"),
+              ),
+              ElevatedButton(
+                onPressed: selectedBook == null
+                    ? null
+                    : () async {
+                        await BookDatabase.instance.issueBook(
+                          selectedBook!.id,
+                          memberId,
+                        );
+                        Navigator.pop(context);
+                        _loadIssuedBooks();
+                        setState(() {});
+                      },
+                child: const Text("Issue"),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
