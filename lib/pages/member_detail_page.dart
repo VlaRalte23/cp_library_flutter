@@ -207,9 +207,11 @@ class _MemberDetailPageState extends State<MemberDetailPage> {
         .toList(); // only available books
 
     if (availableBooks.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("No available books to issue.")),
-      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("No available books to issue.")),
+        );
+      }
       return;
     }
 
@@ -230,7 +232,7 @@ class _MemberDetailPageState extends State<MemberDetailPage> {
                 items: availableBooks.map((book) {
                   return DropdownMenuItem<Book>(
                     value: book,
-                    child: Text(book.title),
+                    child: Text("${book.title} - ${book.author}"),
                   );
                 }).toList(),
                 onChanged: (book) {
