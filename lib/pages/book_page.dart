@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:library_chawnpui/helper/book_database.dart';
 import '../models/book.dart';
@@ -50,7 +49,7 @@ class _BookPageState extends State<BookPage> {
       filtered = filtered
           .where(
             (b) =>
-                b.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+                b.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
                 b.author.toLowerCase().contains(_searchQuery.toLowerCase()),
           )
           .toList();
@@ -179,7 +178,7 @@ class _BookPageState extends State<BookPage> {
                       child: ListTile(
                         contentPadding: const EdgeInsets.all(16),
                         title: Text(
-                          book.title,
+                          book.name,
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 18,
@@ -297,7 +296,7 @@ class _BookPageState extends State<BookPage> {
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
-          title: Text(book.title),
+          title: Text(book.name),
           content: SingleChildScrollView(
             child: ListBody(
               children: <Widget>[

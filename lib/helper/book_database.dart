@@ -31,8 +31,11 @@ class BookDatabase {
     await db.execute('''
       CREATE TABLE books(
         id INTEGER PRIMARY KEY,
-        title TEXT NOT NULL,
+        name TEXT NOT NULL,
         author TEXT NOT NULL,
+        bookSlId TEXT,
+        bookShelf TEXT,
+        copies INT DEFAULT 0,
         isIssued INTEGER NOT NULL DEFAULT 0,
         issuedTo INTEGER,
         dueDate TEXT

@@ -112,7 +112,7 @@ class _MemberDetailPageState extends State<MemberDetailPage> {
                             color: isOverdue ? Colors.red : Colors.green,
                           ),
                           title: Text(
-                            book.title,
+                            book.name,
                             style: TextStyle(fontWeight: FontWeight.w600),
                           ),
                           subtitle: Column(
@@ -232,7 +232,7 @@ class _MemberDetailPageState extends State<MemberDetailPage> {
                 items: availableBooks.map((book) {
                   return DropdownMenuItem<Book>(
                     value: book,
-                    child: Text("${book.title} - ${book.author}"),
+                    child: Text("${book.name} - ${book.author}"),
                   );
                 }).toList(),
                 onChanged: (book) {

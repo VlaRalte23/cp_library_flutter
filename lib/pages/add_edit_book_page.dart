@@ -14,7 +14,9 @@ class AddEditBookPage extends StatefulWidget {
 class _AddEditBookPageState extends State<AddEditBookPage> {
   final _formKey = GlobalKey<FormState>();
   final _idController = TextEditingController();
-  final _titleController = TextEditingController();
+  final _bookNameController = TextEditingController();
+  final _bookSlIdController = TextEditingController();
+  final _bookShelfController = TextEditingController();
   final _authorController = TextEditingController();
   bool _isIssued = false;
 
@@ -26,8 +28,10 @@ class _AddEditBookPageState extends State<AddEditBookPage> {
     if (widget.book != null) {
       // Populate fields if editing an existing book
       _idController.text = widget.book!.id.toString();
-      _titleController.text = widget.book!.title;
+      _bookNameController.text = widget.book!.name;
       _authorController.text = widget.book!.author;
+      _bookSlIdController.text = widget.book!.bookSlId;
+      _bookNameController.text = widget.book!.bookshelf;
       _isIssued = widget.book!.isIssued;
     }
   }
@@ -35,7 +39,7 @@ class _AddEditBookPageState extends State<AddEditBookPage> {
   @override
   void dispose() {
     _idController.dispose();
-    _titleController.dispose();
+    _bookNameController.dispose();
     _authorController.dispose();
     super.dispose();
   }
@@ -45,7 +49,9 @@ class _AddEditBookPageState extends State<AddEditBookPage> {
       setState(() => _isLoading = true);
 
       final id = int.tryParse(_idController.text.trim());
-      final title = _titleController.text.trim();
+      final bookName = _bookNameController.text.trim();
+      final bookSerialId = _bookSlIdController.text.trim();
+      final bookShelf = _bookShelfController.text.trim();
       final author = _authorController.text.trim();
 
       if (id == null) {
@@ -56,14 +62,15 @@ class _AddEditBookPageState extends State<AddEditBookPage> {
 
       final book = Book(
         id: id,
-        title: title,
+        name: bookName,
+        bookSlId: bookSerialId,
+        bookshelf: bookShelf,
         author: author,
         isIssued: _isIssued,
       );
 
       try {
         final db = BookDatabase.instance;
-        
 
         if (widget.book == null) {
           // Add new book
@@ -136,7 +143,7 @@ class _AddEditBookPageState extends State<AddEditBookPage> {
 
               // Title Field
               TextFormField(
-                controller: _titleController,
+                controller: _bookNameController,
                 decoration: InputDecoration(
                   labelText: 'Title',
                   border: OutlineInputBorder(
