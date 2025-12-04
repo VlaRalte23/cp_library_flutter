@@ -209,7 +209,7 @@ class BookDatabase {
       where: 'isIssued = ?',
       whereArgs: [1],
     );
-    print("DEBUG: Issued books raw DB result → $result");
+    //print("DEBUG: Issued books raw DB result → $result");
 
     return result.map((map) => Book.fromMap(map)).toList();
   }

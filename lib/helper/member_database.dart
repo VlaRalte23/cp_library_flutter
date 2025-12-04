@@ -40,6 +40,7 @@ class MemberDatabase {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
       phone TEXT NOT NULL,
+      section TEXT NOT NULL,
       joinedDate TEXT NOT NULL,
       validTill TEXT NOT NULL,
       isActive INTEGER NOT NULL DEFAULT 1

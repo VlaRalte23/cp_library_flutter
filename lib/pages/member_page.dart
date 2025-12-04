@@ -219,11 +219,15 @@ class _MemberPageState extends State<MemberPage> {
               isActive ? Icons.person : Icons.person_off,
               color: isActive ? Colors.green : Colors.red,
             ),
-            title: Text(member.name),
+            title: Text(
+              member.name,
+              style: TextStyle(fontWeight: FontWeight.w500),
+            ),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Phone: ${member.phone}'),
+                Text('Section Awmna: ${member.section}'),
                 Text(
                   'Valid Till: ${formatDate(member.validTill)}',
                   style: const TextStyle(

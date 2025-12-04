@@ -15,11 +15,13 @@ class _AddMemberDialogState extends State<AddMemberDialog> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _memberSection = TextEditingController();
 
   @override
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();
+    _memberSection.dispose();
     super.dispose();
   }
 
@@ -29,6 +31,8 @@ class _AddMemberDialogState extends State<AddMemberDialog> {
       final member = Member(
         name: _nameController.text.trim(),
         phone: _phoneController.text.trim(),
+        section: _memberSection.text.trim(),
+
         joinedDate: now,
         validTill: DateTime(now.year + 1, now.month, now.day),
         isActive: true,
@@ -41,9 +45,11 @@ class _AddMemberDialogState extends State<AddMemberDialog> {
         Navigator.pop(context, true);
       } catch (e) {
         if (!mounted) return;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to add member: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Member Dah Belhna Lamah Buaina a awm tlat mai: $e'),
+          ),
+        );
         log('Failed to save member: $e');
       }
     }
@@ -52,7 +58,7 @@ class _AddMemberDialogState extends State<AddMemberDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Add New Member'),
+      title: const Text('Member Thar Dah Belh Na'),
       content: Form(
         key: _formKey,
         child: Column(
@@ -60,16 +66,22 @@ class _AddMemberDialogState extends State<AddMemberDialog> {
           children: [
             TextFormField(
               controller: _nameController,
-              decoration: const InputDecoration(labelText: 'Name'),
-              validator: (value) =>
-                  value == null || value.isEmpty ? 'Enter a name' : null,
+              decoration: const InputDecoration(labelText: 'Hming'),
+              validator: (value) => value == null || value.isEmpty
+                  ? 'I Hming Chhu Lut Rawh'
+                  : null,
             ),
             TextFormField(
               controller: _phoneController,
               decoration: const InputDecoration(labelText: 'Phone'),
-              validator: (value) => value == null || value.isEmpty
-                  ? 'Enter a phone number'
-                  : null,
+              validator: (value) =>
+                  value == null || value.isEmpty ? 'I Phone Number' : null,
+            ),
+            TextFormField(
+              controller: _memberSection,
+              decoration: const InputDecoration(labelText: 'Section'),
+              validator: (value) =>
+                  value == null || value.isEmpty ? 'I Section awmna' : null,
             ),
           ],
         ),
