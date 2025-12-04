@@ -13,11 +13,20 @@ class MemberPage extends StatefulWidget {
 
 class _MemberPageState extends State<MemberPage> {
   late Future<List<Member>> _membersFuture;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
     _loadMembers();
+
+    // Listen to search input
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text.trim().toLowerCase();
+      });
+    });
   }
 
   void _loadMembers() {
@@ -30,6 +39,17 @@ class _MemberPageState extends State<MemberPage> {
     });
   }
 
+  List<Member> _filterMembers(List<Member> members) {
+    if (_searchQuery.isEmpty) return members;
+    return members
+        .where(
+          (m) =>
+              m.name.toLowerCase().contains(_searchQuery) ||
+              m.phone.toLowerCase().contains(_searchQuery),
+        )
+        .toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -40,81 +60,114 @@ class _MemberPageState extends State<MemberPage> {
         ),
         backgroundColor: Colors.green,
         leading: IconButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
-          icon: Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.arrow_back),
         ),
       ),
-      body: FutureBuilder<List<Member>>(
-        future: _membersFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          }
-
-          final members = snapshot.data ?? [];
-
-          if (members.isEmpty) {
-            return const Center(child: Text('No members added yet'));
-          }
-          final activeMembers = members.where((m) => m.isActive).toList();
-          final nonActiveMembers = members.where((m) => !m.isActive).toList();
-
-          return RefreshIndicator(
-            onRefresh: () async => _refreshMembers(),
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(
-                    height: 40,
-                    width: 200,
-                    child: ElevatedButton.icon(
-                      label: const Text(
-                        'Add Member',
-                        style: TextStyle(color: Colors.black),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        padding: EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      onPressed: () async {
-                        final added = await showDialog(
-                          context: context,
-                          builder: (_) => const AddMemberDialog(),
-                        );
-                        if (added == true) {
-                          _refreshMembers();
-                        }
-                      },
+      body: Column(
+        children: [
+          // Search field + Add Member button
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Search field
+                TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Search members...',
+                    prefixIcon: const Icon(Icons.search),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
                     ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12),
                   ),
-                  SizedBox(height: 10),
-                  const Text(
-                    'Active Members',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 12),
+                // Add Member button full width
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.add, color: Colors.white),
+                  label: const Text(
+                    'Add Member',
+                    style: TextStyle(color: Colors.white, fontSize: 16),
                   ),
-                  const SizedBox(height: 8),
-                  _buildMemberList(activeMembers, isActive: true),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Non-Active Members',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
-                  const SizedBox(height: 8),
-                  _buildMemberList(nonActiveMembers, isActive: false),
-                ],
-              ),
+                  onPressed: () async {
+                    final added = await showDialog(
+                      context: context,
+                      builder: (_) => const AddMemberDialog(),
+                    );
+                    if (added == true) _refreshMembers();
+                  },
+                ),
+              ],
             ),
-          );
-        },
+          ),
+
+          // Members list
+          Expanded(
+            child: FutureBuilder<List<Member>>(
+              future: _membersFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                }
+
+                final members = snapshot.data ?? [];
+                final filteredMembers = _filterMembers(members);
+
+                if (filteredMembers.isEmpty) {
+                  return const Center(child: Text('No members found'));
+                }
+
+                final activeMembers = filteredMembers
+                    .where((m) => m.isActive)
+                    .toList();
+                final nonActiveMembers = filteredMembers
+                    .where((m) => !m.isActive)
+                    .toList();
+
+                return RefreshIndicator(
+                  onRefresh: () async => _refreshMembers(),
+                  child: ListView(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    children: [
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Active Members',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      _buildMemberList(activeMembers, isActive: true),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Non-Active Members',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      _buildMemberList(nonActiveMembers, isActive: false),
+                      const SizedBox(height: 16),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -124,18 +177,14 @@ class _MemberPageState extends State<MemberPage> {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 8.0),
         child: Text(
-          isActive ? 'No active Members.' : 'No active Members',
+          isActive ? 'No active Members.' : 'No non-active Members',
           style: const TextStyle(color: Colors.grey),
         ),
       );
     }
 
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: members.length,
-      itemBuilder: (context, index) {
-        final member = members[index];
+    return Column(
+      children: members.map((member) {
         return Card(
           elevation: 2,
           margin: const EdgeInsets.symmetric(vertical: 4),
@@ -152,7 +201,11 @@ class _MemberPageState extends State<MemberPage> {
                 Text('Phone: ${member.phone}'),
                 Text(
                   'Valid Till: ${member.validTill.toLocal().toString().split(' ')[0]}',
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color.fromARGB(255, 59, 59, 59),
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),
@@ -178,9 +231,7 @@ class _MemberPageState extends State<MemberPage> {
                   ),
                 );
 
-                if (!mounted) {
-                  return;
-                }
+                if (!mounted) return;
 
                 if (confirm == true) {
                   try {
@@ -208,30 +259,36 @@ class _MemberPageState extends State<MemberPage> {
               },
               icon: const Icon(Icons.delete, color: Colors.red),
             ),
-            onTap: () {
-              Navigator.of(context).push(_createSlideUpRoute(member));
+            onTap: () async {
+              final updated = await Navigator.of(
+                context,
+              ).push(_createSlideUpRoute(member));
+
+              if (updated == true) {
+                _refreshMembers(); // <— reload UI
+              }
             },
           ),
         );
-      },
+      }).toList(),
     );
   }
 
   Route _createSlideUpRoute(Member member) {
     return PageRouteBuilder(
-      opaque: false, // Allows background to show through
-      barrierColor: Colors.black54, // Dim background like modal
+      opaque: false,
+      barrierColor: Colors.black54,
       pageBuilder: (context, animation, secondaryAnimation) =>
           MemberDetailPage(member: member),
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        const begin = Offset(0.0, 1.0); // from bottom
+        const begin = Offset(0.0, 1.0);
         const end = Offset.zero;
         const curve = Curves.easeOutCubic;
 
         final curvedAnimation = CurvedAnimation(
           parent: animation,
           curve: curve,
-          reverseCurve: Curves.easeInCubic, // smooth slide-down
+          reverseCurve: Curves.easeInCubic,
         );
 
         return SlideTransition(

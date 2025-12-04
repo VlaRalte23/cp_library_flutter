@@ -46,6 +46,7 @@ class BookDatabase {
         author TEXT NOT NULL,
         bookshelf TEXT,
         copies INT DEFAULT 0,
+        issuedCount INTEGER DEFAULT 0,
         isIssued INTEGER NOT NULL DEFAULT 0,
         issuedTo INTEGER,
         issuedDate TEXT,
@@ -95,11 +96,31 @@ class BookDatabase {
   // }
 
   // Return a book
-  Future<int> returnBook(int bookId) async {
+  Future<void> returnBook(int bookId) async {
     final db = await instance.database;
-    return await db.update(
+
+    final result = await db.query(
       'books',
-      {'isIssued': 0, 'issuedTo': null},
+      where: 'id = ?',
+      whereArgs: [bookId],
+      limit: 1,
+    );
+
+    final book = Book.fromMap(result.first);
+
+    if (book.issuedCount > 0) {
+      book.issuedCount--;
+    }
+
+    if (book.issuedCount == 0) {
+      book.issuedTo = null;
+      book.issuedDate = null;
+      book.dueDate = null;
+    }
+
+    await db.update(
+      'books',
+      book.toMap(),
       where: 'id = ?',
       whereArgs: [bookId],
     );
@@ -123,32 +144,50 @@ class BookDatabase {
   }
 
   // Issue a Book to a Member
-  Future<int> issueBook(int bookId, int memberId) async {
+  Future<String> issueBook(int bookId, int memberId) async {
     final db = await instance.database;
-    final dueDate = DateTime.now().add(const Duration(days: 14));
 
-    return await db.update(
+    final result = await db.query(
       'books',
-      {
-        'isIssued': 1, // mark as Issued
-        'issuedTo': memberId,
-        'dueDate': dueDate.toIso8601String(), // Track with member has it
-      },
+      where: 'id = ?',
+      whereArgs: [bookId],
+      limit: 1,
+    );
+
+    if (result.isEmpty) return 'Book not found';
+
+    final book = Book.fromMap(result.first);
+
+    if (book.issuedCount >= book.copies) {
+      return 'No copies available';
+    }
+
+    book.issuedCount++;
+    book.issuedTo = memberId;
+    book.issuedDate = DateTime.now();
+    book.dueDate = DateTime.now().add(const Duration(days: 14));
+    book.isIssued = true;
+
+    await db.update(
+      'books',
+      book.toMap(),
       where: 'id = ?',
       whereArgs: [bookId],
     );
+
+    return 'Issued successfully';
   }
 
   // Return a Book
-  Future<int> returnedBook(int bookId) async {
-    final db = await instance.database;
-    return await db.update(
-      'books',
-      {'isIssued': 0, 'issuedTo': null, 'dueDate': null},
-      where: 'id = ?',
-      whereArgs: [bookId],
-    );
-  }
+  // Future<int> returnedBook(int bookId) async {
+  //   final db = await instance.database;
+  //   return await db.update(
+  //     'books',
+  //     {'isIssued': 0, 'issuedTo': null, 'dueDate': null},
+  //     where: 'id = ?',
+  //     whereArgs: [bookId],
+  //   );
+  // }
 
   // Extend DueDate
   Future<void> extendDueDate(int bookId, DateTime newDate) async {
@@ -170,6 +209,7 @@ class BookDatabase {
       where: 'isIssued = ?',
       whereArgs: [1],
     );
+    print("DEBUG: Issued books raw DB result → $result");
 
     return result.map((map) => Book.fromMap(map)).toList();
   }

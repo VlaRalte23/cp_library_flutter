@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:library_chawnpui/helper/book_database.dart';
 import 'package:library_chawnpui/models/book.dart';
+import 'package:library_chawnpui/helper/member_database.dart';
 
 class IssuedPage extends StatefulWidget {
   const IssuedPage({super.key});
@@ -74,7 +75,9 @@ class _IssuedPageState extends State<IssuedPage> {
 
               return FutureBuilder<Map<String, dynamic>?>(
                 future: book.issuedTo != null
-                    ? BookDatabase.instance.getMemberById(book.issuedTo!)
+                    ? getMemberById(
+                        book.issuedTo!,
+                      ) // <- CALL THE HELPER FUNCTION
                     : Future.value(null),
                 builder: (context, memberSnap) {
                   String memberName = "Unknown Member";
@@ -92,7 +95,7 @@ class _IssuedPageState extends State<IssuedPage> {
                       leading: const Icon(Icons.book),
                       title: Text(
                         book.name,
-                        style: TextStyle(fontWeight: FontWeight.w600),
+                        style: const TextStyle(fontWeight: FontWeight.w600),
                       ),
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,

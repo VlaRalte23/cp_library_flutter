@@ -4,6 +4,7 @@ class Book {
   final String author;
   final int copies; // Number of copies available
   final String bookshelf; // Bookshelf name
+  int issuedCount;
   bool isIssued; // Track if currently issued
   int? issuedTo; // Member ID
   DateTime? issuedDate; // Date when issued
@@ -13,7 +14,8 @@ class Book {
     required this.id,
     required this.name,
     required this.author,
-    this.copies = 1,
+    required this.copies,
+    this.issuedCount = 0,
     required this.bookshelf,
     this.isIssued = false,
     this.issuedTo,
@@ -35,6 +37,7 @@ class Book {
           map['bookshelf name']?.toString() ??
           "Unknown Shelf",
       isIssued: map['isIssued'] == 1,
+      issuedCount: map['issuedCount'] ?? 0,
       issuedTo: map['issuedTo'],
       issuedDate: map['issuedDate'] != null
           ? DateTime.parse(map['issuedDate'])
@@ -53,6 +56,7 @@ class Book {
       'author': author,
       'copies': copies,
       'bookshelf': bookshelf,
+      'issuedCount': issuedCount,
       'isIssued': isIssued ? 1 : 0,
       'issuedTo': issuedTo,
       'issuedDate': issuedDate?.toIso8601String(),

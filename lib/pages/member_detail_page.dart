@@ -21,7 +21,7 @@ class _MemberDetailPageState extends State<MemberDetailPage> {
     _loadIssuedBooks();
   }
 
-  // Example placeholder for issued books:
+  // Load issued books
   void _loadIssuedBooks() {
     setState(() {
       _issuedBooks = BookDatabase.instance.getBooksIssuedTo(widget.member.id!);
@@ -66,18 +66,24 @@ class _MemberDetailPageState extends State<MemberDetailPage> {
                     ),
                     Text(
                       'Valid Till: ${member.validTill.toString().split(" ")[0]}',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black,
+                      ),
                     ),
                     Text('Status: ${member.isActive ? "Active" : "Inactive"}'),
                   ],
                 ),
               ),
             ),
+
             const SizedBox(height: 16),
             const Text(
               'Issued Books',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const Divider(),
+
             Expanded(
               child: FutureBuilder<List<Book>>(
                 future: _issuedBooks,
@@ -103,6 +109,7 @@ class _MemberDetailPageState extends State<MemberDetailPage> {
                       final isOverdue =
                           book.dueDate != null &&
                           book.dueDate!.isBefore(DateTime.now());
+
                       return Card(
                         color: isOverdue ? Colors.red.shade100 : Colors.white,
                         margin: const EdgeInsets.symmetric(vertical: 4),
@@ -113,27 +120,18 @@ class _MemberDetailPageState extends State<MemberDetailPage> {
                           ),
                           title: Text(
                             book.name,
-                            style: TextStyle(fontWeight: FontWeight.w600),
+                            style: const TextStyle(fontWeight: FontWeight.w600),
                           ),
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                'Author: ${book.author}',
-                                style: TextStyle(fontWeight: FontWeight.w600),
-                              ),
+                              Text('Author: ${book.author}'),
 
-                              // New formatted due date
+                              // Due date formatted
                               Text(
                                 "Due: ${book.dueDate != null ? DateFormat('dd MMM yyyy').format(book.dueDate!) : 'No date'}",
                                 style: TextStyle(
-                                  color:
-                                      (book.dueDate != null &&
-                                          book.dueDate!.isBefore(
-                                            DateTime.now(),
-                                          ))
-                                      ? Colors.red
-                                      : Colors.black,
+                                  color: isOverdue ? Colors.red : Colors.black,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -146,7 +144,7 @@ class _MemberDetailPageState extends State<MemberDetailPage> {
                                     initialDate: book.dueDate ?? DateTime.now(),
                                     firstDate: DateTime.now(),
                                     lastDate: DateTime.now().add(
-                                      Duration(days: 365),
+                                      const Duration(days: 365),
                                     ),
                                   );
 
@@ -155,8 +153,7 @@ class _MemberDetailPageState extends State<MemberDetailPage> {
                                       book.id,
                                       selectedDate,
                                     );
-                                    _loadIssuedBooks(); // refresh
-                                    setState(() {});
+                                    _loadIssuedBooks(); // refresh list
                                   }
                                 },
                                 child: const Text("Extend Due Date"),
@@ -174,6 +171,8 @@ class _MemberDetailPageState extends State<MemberDetailPage> {
                               ),
                               onPressed: () async {
                                 await BookDatabase.instance.returnBook(book.id);
+
+                                // Refresh and notify parent
                                 _loadIssuedBooks();
                                 setState(() {});
                               },
@@ -189,6 +188,8 @@ class _MemberDetailPageState extends State<MemberDetailPage> {
           ],
         ),
       ),
+
+      // ISSUE BOOK BUTTON
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: Colors.green,
         icon: const Icon(Icons.add),
@@ -200,11 +201,12 @@ class _MemberDetailPageState extends State<MemberDetailPage> {
     );
   }
 
+  // Show Issue Book dialog
   void _showIssueBookDialog(BuildContext context, int memberId) async {
     final books = await BookDatabase.instance.getBooks();
     final availableBooks = books
-        .where((book) => book.isIssued == false)
-        .toList(); // only available books
+        .where((book) => book.issuedCount < book.copies)
+        .toList();
 
     if (availableBooks.isEmpty) {
       if (context.mounted) {
@@ -253,9 +255,11 @@ class _MemberDetailPageState extends State<MemberDetailPage> {
                           selectedBook!.id,
                           memberId,
                         );
-                        Navigator.pop(context);
                         _loadIssuedBooks();
-                        setState(() {});
+
+                        if (context.mounted) {
+                          Navigator.pop(context, true);
+                        } // notify parent
                       },
                 child: const Text("Issue"),
               ),

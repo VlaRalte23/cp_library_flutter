@@ -4,6 +4,7 @@ class Member {
   final String phone;
   final DateTime joinedDate;
   final DateTime validTill;
+  final bool isActive;
 
   Member({
     this.id,
@@ -11,6 +12,7 @@ class Member {
     required this.phone,
     required this.joinedDate,
     required this.validTill,
+    required this.isActive,
   });
 
   Map<String, dynamic> toMap() {
@@ -24,15 +26,14 @@ class Member {
     };
   }
 
-  factory Member.fromMap(Map<String, dynamic> toJson) {
+  factory Member.fromMap(Map<String, dynamic> map) {
     return Member(
-      id: toJson['id'],
-      name: toJson['name'],
-      phone: toJson['phone'],
-      joinedDate: DateTime.parse(toJson['joinedDate']),
-      validTill: DateTime.parse(toJson['validTill']),
+      id: map['id'],
+      name: map['name'],
+      phone: map['phone'],
+      joinedDate: DateTime.parse(map['joinedDate']),
+      validTill: DateTime.parse(map['validTill']),
+      isActive: map['isActive'] == 1,
     );
   }
-
-  bool get isActive => validTill.isAfter(DateTime.now());
 }

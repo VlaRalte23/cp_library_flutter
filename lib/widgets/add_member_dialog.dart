@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:library_chawnpui/helper/member_database.dart';
 import 'package:library_chawnpui/models/member.dart';
@@ -29,6 +31,7 @@ class _AddMemberDialogState extends State<AddMemberDialog> {
         phone: _phoneController.text.trim(),
         joinedDate: now,
         validTill: DateTime(now.year + 1, now.month, now.day),
+        isActive: true,
       );
 
       try {
@@ -41,6 +44,7 @@ class _AddMemberDialogState extends State<AddMemberDialog> {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Failed to add member: $e')));
+        log('Failed to save member: $e');
       }
     }
   }
