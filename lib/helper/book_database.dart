@@ -24,7 +24,18 @@ class BookDatabase {
     // await deleteDatabase(path);
     // log('Deleted old db at: $path');
 
-    return await openDatabase(path, version: 1, onCreate: _createDB);
+    return await openDatabase(
+      path,
+      version: 2,
+      onCreate: _createDB,
+      onUpgrade: _upgradeDB,
+    );
+  }
+
+  Future _upgradeDB(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute("ALTER TABLE books ADD COLUMN issuedDate TEXT;");
+    }
   }
 
   Future _createDB(Database db, int version) async {
@@ -33,7 +44,7 @@ class BookDatabase {
         id INTEGER PRIMARY KEY,
         name TEXT NOT NULL,
         author TEXT NOT NULL,
-        bookShelf TEXT,
+        bookshelf TEXT,
         copies INT DEFAULT 0,
         isIssued INTEGER NOT NULL DEFAULT 0,
         issuedTo INTEGER,
@@ -149,6 +160,24 @@ class BookDatabase {
       where: 'id = ?',
       whereArgs: [bookId],
     );
+  }
+
+  Future<List<Book>> getIssuedBooks() async {
+    final db = await instance.database;
+
+    final result = await db.query(
+      'books',
+      where: 'isIssued = ?',
+      whereArgs: [1],
+    );
+
+    return result.map((map) => Book.fromMap(map)).toList();
+  }
+
+  Future<Map<String, dynamic>?> getMemberById(int id) async {
+    final db = await instance.database;
+    final result = await db.query('members', where: 'id = ?', whereArgs: [id]);
+    return result.isNotEmpty ? result.first : null;
   }
 
   Future close() async {

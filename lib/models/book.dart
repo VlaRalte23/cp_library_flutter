@@ -3,7 +3,6 @@ class Book {
   final String name; // Book name
   final String author;
   final int copies; // Number of copies available
-  final String bookSlId; // Original Book ID from Excel
   final String bookshelf; // Bookshelf name
   bool isIssued; // Track if currently issued
   int? issuedTo; // Member ID
@@ -15,7 +14,6 @@ class Book {
     required this.name,
     required this.author,
     this.copies = 1,
-    required this.bookSlId,
     required this.bookshelf,
     this.isIssued = false,
     this.issuedTo,
@@ -32,7 +30,6 @@ class Book {
       copies: map['copies'] != null
           ? int.tryParse(map['copies'].toString()) ?? 1
           : 1,
-      bookSlId: map['bookSlId'] ?? "Unknown",
       bookshelf:
           map['bookshelf']?.toString() ??
           map['bookshelf name']?.toString() ??
@@ -55,7 +52,6 @@ class Book {
       'name': name,
       'author': author,
       'copies': copies,
-      'bookSlId': bookSlId,
       'bookshelf': bookshelf,
       'isIssued': isIssued ? 1 : 0,
       'issuedTo': issuedTo,

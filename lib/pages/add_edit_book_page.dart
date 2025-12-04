@@ -17,7 +17,6 @@ class _AddEditBookPageState extends State<AddEditBookPage> {
   final _formKey = GlobalKey<FormState>();
   final _idController = TextEditingController();
   final _bookNameController = TextEditingController();
-  final _bookSlIdController = TextEditingController();
   final _bookShelfController = TextEditingController();
   final _bookCopiesController = TextEditingController();
   final _authorController = TextEditingController();
@@ -29,12 +28,10 @@ class _AddEditBookPageState extends State<AddEditBookPage> {
   void initState() {
     super.initState();
     if (widget.book != null) {
-      // Populate fields if editing an existing book
       _idController.text = widget.book!.id.toString();
       _bookNameController.text = widget.book!.name;
       _authorController.text = widget.book!.author;
-      _bookSlIdController.text = widget.book!.bookSlId;
-      _bookNameController.text = widget.book!.bookshelf;
+      _bookShelfController.text = widget.book!.bookshelf; // FIXED
       _bookCopiesController.text = widget.book!.copies.toString();
       _isIssued = widget.book!.isIssued;
     }
@@ -45,6 +42,7 @@ class _AddEditBookPageState extends State<AddEditBookPage> {
     _idController.dispose();
     _bookNameController.dispose();
     _authorController.dispose();
+    _bookShelfController.dispose();
     super.dispose();
   }
 
@@ -54,7 +52,6 @@ class _AddEditBookPageState extends State<AddEditBookPage> {
 
       final id = int.tryParse(_idController.text.trim());
       final bookName = _bookNameController.text.trim();
-      final bookSerialId = _bookSlIdController.text.trim();
       final bookCopies = int.tryParse(_bookCopiesController.text.trim()) ?? 0;
       final bookShelf = _bookShelfController.text.trim();
       final author = _authorController.text.trim();
@@ -68,7 +65,6 @@ class _AddEditBookPageState extends State<AddEditBookPage> {
       final book = Book(
         id: id,
         name: bookName,
-        bookSlId: bookSerialId,
         bookshelf: bookShelf,
         copies: bookCopies,
         author: author,
@@ -188,11 +184,11 @@ class _AddEditBookPageState extends State<AddEditBookPage> {
               TextFormField(
                 controller: _bookCopiesController,
                 decoration: InputDecoration(
-                  labelText: 'Author',
+                  labelText: 'Copy',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  prefixIcon: const Icon(Icons.person),
+                  prefixIcon: const Icon(Icons.numbers_rounded),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -209,7 +205,7 @@ class _AddEditBookPageState extends State<AddEditBookPage> {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  prefixIcon: const Icon(Icons.person),
+                  prefixIcon: const Icon(Icons.shelves),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
