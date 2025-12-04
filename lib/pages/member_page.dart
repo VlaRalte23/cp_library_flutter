@@ -50,6 +50,31 @@ class _MemberPageState extends State<MemberPage> {
         .toList();
   }
 
+  String formatDate(DateTime? date) {
+    if (date == null) return "Unknown";
+
+    const months = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+
+    String day = date.day.toString().padLeft(2, '0');
+    String month = months[date.month - 1];
+    String year = date.year.toString();
+
+    return "$day $month $year"; // example: 05 Jan 2025
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -200,7 +225,7 @@ class _MemberPageState extends State<MemberPage> {
               children: [
                 Text('Phone: ${member.phone}'),
                 Text(
-                  'Valid Till: ${member.validTill.toLocal().toString().split(' ')[0]}',
+                  'Valid Till: ${formatDate(member.validTill)}',
                   style: const TextStyle(
                     fontSize: 12,
                     color: Color.fromARGB(255, 59, 59, 59),

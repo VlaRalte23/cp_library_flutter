@@ -102,7 +102,7 @@ class _IssuedPageState extends State<IssuedPage> {
                         children: [
                           Text("A Ziaktu: ${book.author}"),
                           Text("Lehkhabu Awmna: ${book.bookshelf}"),
-                          Text("Hawhtu: $memberName (ID: ${book.issuedTo})"),
+                          Text("Hawhtu: $memberName"),
                           if (book.issuedDate != null)
                             Text(
                               "Lehkhabu Hawh Ni: ${formatDate(book.issuedDate)}",

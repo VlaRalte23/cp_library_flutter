@@ -28,6 +28,31 @@ class _MemberDetailPageState extends State<MemberDetailPage> {
     });
   }
 
+  String formatDate(DateTime? date) {
+    if (date == null) return "Unknown";
+
+    const months = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+
+    String day = date.day.toString().padLeft(2, '0');
+    String month = months[date.month - 1];
+    String year = date.year.toString();
+
+    return "$day $month $year"; // example: 05 Jan 2025
+  }
+
   @override
   Widget build(BuildContext context) {
     final member = widget.member;
@@ -65,7 +90,7 @@ class _MemberDetailPageState extends State<MemberDetailPage> {
                       'Joined: ${member.joinedDate.toString().split(" ")[0]}',
                     ),
                     Text(
-                      'Valid Till: ${member.validTill.toString().split(" ")[0]}',
+                      'Valid Till: ${formatDate(member.validTill)}',
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         color: Colors.black,

@@ -37,6 +37,31 @@ class _AddEditBookPageState extends State<AddEditBookPage> {
     }
   }
 
+  String formatDate(DateTime? date) {
+    if (date == null) return "Unknown";
+
+    const months = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+
+    String day = date.day.toString().padLeft(2, '0');
+    String month = months[date.month - 1];
+    String year = date.year.toString();
+
+    return "$day $month $year"; // example: 05 Jan 2025
+  }
+
   @override
   void dispose() {
     _idController.dispose();
