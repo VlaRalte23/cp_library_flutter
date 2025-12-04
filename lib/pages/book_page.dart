@@ -197,6 +197,14 @@ class _BookPageState extends State<BookPage> {
                               style: const TextStyle(fontSize: 14),
                             ),
                             Text(
+                              'Book Shelf: ${book.bookshelf}',
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                            Text(
+                              'Copy/Copies: ${book.copies}',
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                            Text(
                               'Issued: ${book.isIssued ? 'Yes' : 'No'}',
                               style: const TextStyle(fontSize: 14),
                             ),
@@ -302,6 +310,8 @@ class _BookPageState extends State<BookPage> {
               children: <Widget>[
                 Text('Author: ${book.author}'),
                 Text('ID: ${book.id}'),
+                Text('Book Shelf: ${book.bookshelf}'),
+                Text('Copy/Copies: ${book.copies}'),
                 Text('Issued: ${book.isIssued ? 'Yes' : 'No'}'),
               ],
             ),

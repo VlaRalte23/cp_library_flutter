@@ -33,11 +33,11 @@ class BookDatabase {
         id INTEGER PRIMARY KEY,
         name TEXT NOT NULL,
         author TEXT NOT NULL,
-        bookSlId TEXT,
         bookShelf TEXT,
         copies INT DEFAULT 0,
         isIssued INTEGER NOT NULL DEFAULT 0,
         issuedTo INTEGER,
+        issuedDate TEXT,
         dueDate TEXT
         )
     ''');

@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:library_chawnpui/helper/book_database.dart';
 import '../models/book.dart';
@@ -17,6 +19,7 @@ class _AddEditBookPageState extends State<AddEditBookPage> {
   final _bookNameController = TextEditingController();
   final _bookSlIdController = TextEditingController();
   final _bookShelfController = TextEditingController();
+  final _bookCopiesController = TextEditingController();
   final _authorController = TextEditingController();
   bool _isIssued = false;
 
@@ -32,6 +35,7 @@ class _AddEditBookPageState extends State<AddEditBookPage> {
       _authorController.text = widget.book!.author;
       _bookSlIdController.text = widget.book!.bookSlId;
       _bookNameController.text = widget.book!.bookshelf;
+      _bookCopiesController.text = widget.book!.copies.toString();
       _isIssued = widget.book!.isIssued;
     }
   }
@@ -51,6 +55,7 @@ class _AddEditBookPageState extends State<AddEditBookPage> {
       final id = int.tryParse(_idController.text.trim());
       final bookName = _bookNameController.text.trim();
       final bookSerialId = _bookSlIdController.text.trim();
+      final bookCopies = int.tryParse(_bookCopiesController.text.trim()) ?? 0;
       final bookShelf = _bookShelfController.text.trim();
       final author = _authorController.text.trim();
 
@@ -65,6 +70,7 @@ class _AddEditBookPageState extends State<AddEditBookPage> {
         name: bookName,
         bookSlId: bookSerialId,
         bookshelf: bookShelf,
+        copies: bookCopies,
         author: author,
         isIssued: _isIssued,
       );
@@ -85,6 +91,7 @@ class _AddEditBookPageState extends State<AddEditBookPage> {
         if (mounted) Navigator.pop(context);
       } catch (e) {
         _showSnackBar('Failed to save book: $e', isError: true);
+        log('Faild to update $e');
       } finally {
         setState(() => _isLoading = false);
       }
@@ -173,6 +180,40 @@ class _AddEditBookPageState extends State<AddEditBookPage> {
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter an author';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _bookCopiesController,
+                decoration: InputDecoration(
+                  labelText: 'Author',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  prefixIcon: const Icon(Icons.person),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please Enter Number of Copy';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _bookShelfController,
+                decoration: InputDecoration(
+                  labelText: 'Book Shelf',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  prefixIcon: const Icon(Icons.person),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter Book Shelf';
                   }
                   return null;
                 },
