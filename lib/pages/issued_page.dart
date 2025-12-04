@@ -100,11 +100,13 @@ class _IssuedPageState extends State<IssuedPage> {
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text("Author: ${book.author}"),
-                          Text("Bookshelf: ${book.bookshelf}"),
-                          Text("Issued To: $memberName (ID: ${book.issuedTo})"),
+                          Text("A Ziaktu: ${book.author}"),
+                          Text("Lehkhabu Awmna: ${book.bookshelf}"),
+                          Text("Hawhtu: $memberName (ID: ${book.issuedTo})"),
                           if (book.issuedDate != null)
-                            Text("Issued Date: ${formatDate(book.issuedDate)}"),
+                            Text(
+                              "Lehkhabu Hawh Ni: ${formatDate(book.issuedDate)}",
+                            ),
                           if (book.dueDate != null)
                             Text("Due Date: ${formatDate(book.dueDate)}"),
                         ],

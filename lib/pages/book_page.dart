@@ -189,15 +189,15 @@ class _BookPageState extends State<BookPage> {
                           children: [
                             const SizedBox(height: 4),
                             Text(
-                              'Author: ${book.author}',
+                              'A Ziaktu: ${book.author}',
                               style: const TextStyle(fontSize: 14),
                             ),
                             Text(
-                              'ID: ${book.id}',
+                              'Lehkhabu Number: ${book.id}',
                               style: const TextStyle(fontSize: 14),
                             ),
                             Text(
-                              'Book Shelf: ${book.bookshelf}',
+                              'Lehkhabu Dahna: ${book.bookshelf}',
                               style: const TextStyle(fontSize: 14),
                             ),
                             Text(
@@ -308,9 +308,9 @@ class _BookPageState extends State<BookPage> {
           content: SingleChildScrollView(
             child: ListBody(
               children: <Widget>[
-                Text('Author: ${book.author}'),
-                Text('ID: ${book.id}'),
-                Text('Book Shelf: ${book.bookshelf}'),
+                Text('A Ziaktu: ${book.author}'),
+                Text('Lehkhabu Number: ${book.id}'),
+                Text('Lehkhabu Dahna: ${book.bookshelf}'),
                 Text('Copy/Copies: ${book.copies}'),
                 Text('Issued: ${book.isIssued ? 'Yes' : 'No'}'),
               ],

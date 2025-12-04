@@ -126,7 +126,7 @@ class _AddEditBookPageState extends State<AddEditBookPage> {
                 controller: _idController,
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
-                  labelText: 'Book ID',
+                  labelText: 'Lehkhabu Number',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -148,7 +148,7 @@ class _AddEditBookPageState extends State<AddEditBookPage> {
               TextFormField(
                 controller: _bookNameController,
                 decoration: InputDecoration(
-                  labelText: 'Title',
+                  labelText: 'Lehkhabu Hming',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -167,7 +167,7 @@ class _AddEditBookPageState extends State<AddEditBookPage> {
               TextFormField(
                 controller: _authorController,
                 decoration: InputDecoration(
-                  labelText: 'Author',
+                  labelText: 'A Ziaktu',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -184,7 +184,7 @@ class _AddEditBookPageState extends State<AddEditBookPage> {
               TextFormField(
                 controller: _bookCopiesController,
                 decoration: InputDecoration(
-                  labelText: 'Copy',
+                  labelText: 'Lehkhabu Neih Zat',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -201,7 +201,7 @@ class _AddEditBookPageState extends State<AddEditBookPage> {
               TextFormField(
                 controller: _bookShelfController,
                 decoration: InputDecoration(
-                  labelText: 'Book Shelf',
+                  labelText: 'Lehkhabu Awmna',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),

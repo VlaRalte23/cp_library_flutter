@@ -91,14 +91,14 @@ class _LibraryDashboardPageState extends State<LibraryDashboardPage> {
           padding: const EdgeInsets.all(16),
           children: [
             _dashboardItem(
-              "Books",
+              "LEHKHABU",
               "$bookCount",
               Icons.book,
               Colors.blue,
               const BookPage(),
             ),
             _dashboardItem(
-              "Members",
+              "MEMBERS",
               "$memberCount",
               Icons.people,
               Colors.green,
@@ -119,7 +119,7 @@ class _LibraryDashboardPageState extends State<LibraryDashboardPage> {
             //   const MagazinePage(),
             // ),
             _dashboardItem(
-              "ISSUED",
+              "LEHKHABU HAWHTU",
               "$issuedCount",
               Icons.flight,
               Colors.lightBlue,
