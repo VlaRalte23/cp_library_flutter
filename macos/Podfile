@@ -1,4 +1,4 @@
-platform :osx, '10.14'
+platform :osx, '10.15'
 
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
@@ -38,5 +38,29 @@ end
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_macos_build_settings(target)
+    
+    # Add a build phase to clean resource forks before code signing
+    target.build_phases.each do |phase|
+      if phase.is_a?(Xcodeproj::Project::Object::PBXShellScriptBuildPhase)
+        if phase.name == "Clean Resource Forks"
+          target.build_phases.delete(phase)
+        end
+      end
+    end
+    
+    phase = target.new_shell_script_build_phase("Clean Resource Forks")
+    phase.shell_script = <<-SCRIPT
+      set -e
+      export COPYFILE_DISABLE=1
+      if [ -d "${BUILT_PRODUCTS_DIR}/${FULL_PRODUCT_NAME}" ]; then
+        find "${BUILT_PRODUCTS_DIR}/${FULL_PRODUCT_NAME}" -type f \\( -name "._*" -o -name ".DS_Store" \\) -delete 2>/dev/null || true
+        xattr -cr "${BUILT_PRODUCTS_DIR}/${FULL_PRODUCT_NAME}" 2>/dev/null || true
+        dot_clean "${BUILT_PRODUCTS_DIR}/${FULL_PRODUCT_NAME}" 2>/dev/null || true
+      fi
+    SCRIPT
+    phase.show_env_vars_in_log = '0'
+    
+    # Move the clean phase to run before code signing
+    target.build_phases.move(phase, target.build_phases.count - 2)
   end
 end
