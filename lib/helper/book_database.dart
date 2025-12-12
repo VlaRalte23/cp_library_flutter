@@ -172,11 +172,11 @@ class BookDatabase {
       b.bookshelf AS bookshelf,
       bi.memberId AS memberId,
       bi.issuedDate AS issuedDate,
-      bi.dueDate AS dueDate
+      bi.dueDate AS dueDate,
+      bi.returnDate AS returnDate
     FROM book_issues bi
     INNER JOIN books b ON bi.bookId = b.id
-    WHERE bi.returnDate IS NULL
-    ORDER BY bi.dueDate ASC
+    ORDER BY bi.returnDate IS NULL DESC, bi.issuedDate DESC
   ''');
   }
 
@@ -337,27 +337,52 @@ class BookDatabase {
   //   final db = await instance.database;
 
   //   final result = await db.rawQuery('''
-  //   SELECT
-  //     bi.id AS issueId,
-  //     b.id AS bookId,
-  //     b.name AS bookName,
-  //     b.author,
-  //     b.bookshelf,
-  //     m.id AS memberId,
-  //     m.name AS memberName,
-  //     m.phone,
-  //     bi.issuedDate,
-  //     bi.dueDate,
-  //     bi.returnDate
-  //   FROM book_issues bi
-  //   INNER JOIN books b ON bi.bookId = b.id
-  //   INNER JOIN members m ON bi.memberId = m.id
-  //   WHERE bi.returnDate IS NOT NULL
-  //   ORDER BY bi.returnDate DESC
-  // ''');
+  // Get all returned book issues
+  Future<List<Map<String, dynamic>>> getReturnedBooks() async {
+    final db = await instance.database;
 
-  //   return result;
-  // }
+    return await db.rawQuery('''
+    SELECT 
+      bi.id AS issueId,
+      b.id AS bookId,
+      b.name AS bookName,
+      b.author AS author,
+      b.bookshelf AS bookshelf,
+      bi.memberId AS memberId,
+      bi.issuedDate AS issuedDate,
+      bi.dueDate AS dueDate,
+      bi.returnDate AS returnDate
+    FROM book_issues bi
+    INNER JOIN books b ON bi.bookId = b.id
+    WHERE bi.returnDate IS NOT NULL
+    ORDER BY bi.returnDate DESC
+  ''');
+  }
+
+  // Get all overdue (not returned) book issues
+  Future<List<Map<String, dynamic>>> getOverdueBooks() async {
+    final db = await instance.database;
+
+    return await db.rawQuery(
+      '''
+    SELECT 
+      bi.id AS issueId,
+      b.id AS bookId,
+      b.name AS bookName,
+      b.author AS author,
+      b.bookshelf AS bookshelf,
+      bi.memberId AS memberId,
+      bi.issuedDate AS issuedDate,
+      bi.dueDate AS dueDate,
+      bi.returnDate AS returnDate
+    FROM book_issues bi
+    INNER JOIN books b ON bi.bookId = b.id
+    WHERE bi.returnDate IS NULL AND bi.dueDate < ?
+    ORDER BY bi.dueDate ASC
+  ''',
+      [DateTime.now().toIso8601String()],
+    );
+  }
 
   Future close() async {
     final db = await instance.database;

@@ -13,6 +13,7 @@ class _BookPageState extends State<BookPage> {
   late Future<List<Book>> _booksFuture;
   String _searchQuery = '';
   String _filter = 'All';
+  bool _isGridView = false;
 
   static const Color primaryColor = Color(0xFF313647);
 
@@ -143,6 +144,55 @@ class _BookPageState extends State<BookPage> {
                       ),
                     ),
                     const SizedBox(width: 12),
+                    // View Toggle
+                    Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey.shade300),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          IconButton(
+                            icon: Icon(
+                              Icons.view_list,
+                              size: 20,
+                              color: !_isGridView
+                                  ? primaryColor
+                                  : Colors.grey.shade400,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _isGridView = false;
+                              });
+                            },
+                            tooltip: 'List View',
+                            padding: const EdgeInsets.all(8),
+                          ),
+                          Container(
+                            width: 1,
+                            height: 24,
+                            color: Colors.grey.shade300,
+                          ),
+                          IconButton(
+                            icon: Icon(
+                              Icons.grid_view,
+                              size: 20,
+                              color: _isGridView
+                                  ? primaryColor
+                                  : Colors.grey.shade400,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _isGridView = true;
+                              });
+                            },
+                            tooltip: 'Grid View',
+                            padding: const EdgeInsets.all(8),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
                     ElevatedButton.icon(
                       onPressed: () => _showAddEditDialog(context, null),
                       icon: const Icon(Icons.add, size: 18),
@@ -222,128 +272,285 @@ class _BookPageState extends State<BookPage> {
 
                 books.sort((a, b) => a.id!.compareTo(b.id!));
 
-                return ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: books.length,
-                  itemBuilder: (context, index) {
-                    final book = books[index];
-                    final available = book.copies - book.issuedCount;
-
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.grey.shade200),
-                      ),
-                      child: InkWell(
-                        onTap: () => _showBookDetails(context, book),
-                        borderRadius: BorderRadius.circular(8),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 48,
-                                height: 48,
-                                decoration: BoxDecoration(
-                                  color: primaryColor.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Icon(
-                                  Icons.menu_book,
-                                  color: primaryColor,
-                                  size: 24,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      book.name,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 16,
-                                        color: primaryColor,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'Author: ${book.author}',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        color: Colors.grey.shade600,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      'ID: ${book.id} • Shelf: ${book.bookshelf}',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey.shade500,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Row(
-                                      children: [
-                                        _buildInfoChip(
-                                          'Total: ${book.copies}',
-                                          Colors.blue.shade50,
-                                          Colors.blue.shade700,
-                                        ),
-                                        const SizedBox(width: 8),
-                                        _buildInfoChip(
-                                          'Issued: ${book.issuedCount}',
-                                          Colors.orange.shade50,
-                                          Colors.orange.shade700,
-                                        ),
-                                        const SizedBox(width: 8),
-                                        _buildInfoChip(
-                                          'Available: $available',
-                                          available > 0
-                                              ? Colors.green.shade50
-                                              : Colors.red.shade50,
-                                          available > 0
-                                              ? Colors.green.shade700
-                                              : Colors.red.shade700,
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Column(
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.edit_outlined),
-                                    color: primaryColor,
-                                    onPressed: () =>
-                                        _showAddEditDialog(context, book),
-                                    tooltip: 'Edit',
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete_outline),
-                                    color: Colors.red.shade400,
-                                    onPressed: () =>
-                                        _confirmDelete(context, book.id!),
-                                    tooltip: 'Delete',
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                );
+                return _isGridView
+                    ? _buildGridView(books)
+                    : _buildListView(books);
               },
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildListView(List<Book> books) {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: books.length,
+      itemBuilder: (context, index) {
+        final book = books[index];
+        final available = book.copies - book.issuedCount;
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: InkWell(
+            onTap: () => _showBookDetails(context, book),
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: primaryColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.menu_book,
+                      color: primaryColor,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          book.name,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                            color: primaryColor,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Author: ${book.author}',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'ID: ${book.id} • Shelf: ${book.bookshelf}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade500,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            _buildInfoChip(
+                              'Total: ${book.copies}',
+                              Colors.blue.shade50,
+                              Colors.blue.shade700,
+                            ),
+                            const SizedBox(width: 8),
+                            _buildInfoChip(
+                              'Issued: ${book.issuedCount}',
+                              Colors.orange.shade50,
+                              Colors.orange.shade700,
+                            ),
+                            const SizedBox(width: 8),
+                            _buildInfoChip(
+                              'Available: $available',
+                              available > 0
+                                  ? Colors.green.shade50
+                                  : Colors.red.shade50,
+                              available > 0
+                                  ? Colors.green.shade700
+                                  : Colors.red.shade700,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  Column(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.edit_outlined),
+                        color: primaryColor,
+                        onPressed: () => _showAddEditDialog(context, book),
+                        tooltip: 'Edit',
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline),
+                        color: Colors.red.shade400,
+                        onPressed: () => _confirmDelete(context, book.id!),
+                        tooltip: 'Delete',
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildGridView(List<Book> books) {
+    return GridView.builder(
+      padding: const EdgeInsets.all(16),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        childAspectRatio: 0.75,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+      ),
+      itemCount: books.length,
+      itemBuilder: (context, index) {
+        final book = books[index];
+        final available = book.copies - book.issuedCount;
+
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: InkWell(
+            onTap: () => _showBookDetails(context, book),
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Icon and Actions
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: primaryColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.menu_book,
+                          color: primaryColor,
+                          size: 24,
+                        ),
+                      ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.edit_outlined, size: 18),
+                            color: primaryColor,
+                            onPressed: () => _showAddEditDialog(context, book),
+                            tooltip: 'Edit',
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                          ),
+                          const SizedBox(width: 8),
+                          IconButton(
+                            icon: const Icon(Icons.delete_outline, size: 18),
+                            color: Colors.red.shade400,
+                            onPressed: () => _confirmDelete(context, book.id!),
+                            tooltip: 'Delete',
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // Book Title
+                  Text(
+                    book.name,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                      color: primaryColor,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 6),
+                  // Author
+                  Text(
+                    book.author,
+                    style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  // ID and Shelf
+                  Text(
+                    'ID: ${book.id} • Shelf: ${book.bookshelf}',
+                    style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const Spacer(),
+                  const Divider(height: 16),
+                  // Stats
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildGridInfoRow(
+                        'Total',
+                        book.copies.toString(),
+                        Colors.blue.shade700,
+                      ),
+                      const SizedBox(height: 4),
+                      _buildGridInfoRow(
+                        'Issued',
+                        book.issuedCount.toString(),
+                        Colors.orange.shade700,
+                      ),
+                      const SizedBox(height: 4),
+                      _buildGridInfoRow(
+                        'Available',
+                        available.toString(),
+                        available > 0
+                            ? Colors.green.shade700
+                            : Colors.red.shade700,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildGridInfoRow(String label, String value, Color color) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: color,
+          ),
+        ),
+      ],
     );
   }
 

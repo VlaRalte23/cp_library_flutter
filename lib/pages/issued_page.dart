@@ -263,6 +263,7 @@ class _IssuedPageState extends State<IssuedPage> {
                                     ),
                                     child: Row(
                                       children: [
+                                        _buildTableHeader('S.No', flex: 1),
                                         _buildTableHeader(
                                           'Book Title',
                                           flex: 3,
@@ -287,7 +288,12 @@ class _IssuedPageState extends State<IssuedPage> {
                                     itemCount: paginatedIssues.length,
                                     itemBuilder: (context, index) {
                                       final issue = paginatedIssues[index];
-                                      return _buildTableRow(issue, index);
+                                      final serialNumber =
+                                          startIndex + index + 1;
+                                      return _buildTableRow(
+                                        issue,
+                                        serialNumber,
+                                      );
                                     },
                                   ),
                                 ],
@@ -427,31 +433,61 @@ class _IssuedPageState extends State<IssuedPage> {
 
   Widget _buildTableRow(Map<String, dynamic> issue, int index) {
     final dueDate = DateTime.parse(issue['dueDate']);
-    final isOverdue = dueDate.isBefore(DateTime.now());
+    final isReturned = issue['returnDate'] != null;
+    final isOverdue = !isReturned && dueDate.isBefore(DateTime.now());
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: isOverdue ? Colors.red.shade50 : Colors.transparent,
+        color: isReturned
+            ? Colors.green.shade50
+            : (isOverdue ? Colors.red.shade50 : Colors.transparent),
         border: Border(
           bottom: BorderSide(color: Colors.grey.shade100),
-          left: isOverdue
-              ? BorderSide(color: Colors.red.shade700, width: 4)
-              : BorderSide.none,
+          left: isReturned
+              ? BorderSide(color: Colors.green.shade700, width: 4)
+              : (isOverdue
+                    ? BorderSide(color: Colors.red.shade700, width: 4)
+                    : BorderSide.none),
         ),
       ),
       child: Row(
         children: [
-          // Overdue Indicator
-          if (isOverdue)
-            Container(
-              margin: const EdgeInsets.only(right: 12),
-              child: Icon(
-                Icons.warning_rounded,
-                color: Colors.red.shade700,
-                size: 20,
-              ),
+          // Serial Number
+          Expanded(
+            flex: 1,
+            child: Row(
+              children: [
+                Text(
+                  index.toString(),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+                // Status Indicator
+                if (isReturned)
+                  Container(
+                    margin: const EdgeInsets.only(left: 8),
+                    child: Icon(
+                      Icons.check_circle,
+                      color: Colors.green.shade700,
+                      size: 18,
+                    ),
+                  )
+                else if (isOverdue)
+                  Container(
+                    margin: const EdgeInsets.only(left: 8),
+                    child: Icon(
+                      Icons.warning_rounded,
+                      color: Colors.red.shade700,
+                      size: 18,
+                    ),
+                  ),
+              ],
             ),
+          ),
           // Book Title
           Expanded(
             flex: 3,
@@ -506,18 +542,22 @@ class _IssuedPageState extends State<IssuedPage> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: isOverdue ? Colors.red.shade50 : Colors.green.shade50,
+                color: isReturned
+                    ? Colors.green.shade50
+                    : (isOverdue ? Colors.red.shade50 : Colors.blue.shade50),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
-                isOverdue ? 'Overdue' : 'Active',
+                isReturned ? 'Returned' : (isOverdue ? 'Overdue' : 'Active'),
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
-                  color: isOverdue
-                      ? Colors.red.shade700
-                      : Colors.green.shade700,
+                  color: isReturned
+                      ? Colors.green.shade700
+                      : (isOverdue
+                            ? Colors.red.shade700
+                            : Colors.blue.shade700),
                 ),
               ),
             ),
@@ -525,28 +565,39 @@ class _IssuedPageState extends State<IssuedPage> {
           // Actions
           Expanded(
             flex: 1,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.calendar_month, size: 18),
-                  color: primaryColor,
-                  onPressed: () => _extendDueDate(issue),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                  tooltip: 'Extend Due Date',
-                ),
-                const SizedBox(width: 8),
-                IconButton(
-                  icon: const Icon(Icons.check_circle_outline, size: 18),
-                  color: Colors.green.shade600,
-                  onPressed: () => _returnBook(issue),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                  tooltip: 'Return Book',
-                ),
-              ],
-            ),
+            child: isReturned
+                ? Center(
+                    child: Text(
+                      formatDate(issue['returnDate']),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.green.shade700,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  )
+                : Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.calendar_month, size: 18),
+                        color: primaryColor,
+                        onPressed: () => _extendDueDate(issue),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        tooltip: 'Extend Due Date',
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        icon: const Icon(Icons.check_circle_outline, size: 18),
+                        color: Colors.green.shade600,
+                        onPressed: () => _returnBook(issue),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        tooltip: 'Return Book',
+                      ),
+                    ],
+                  ),
           ),
         ],
       ),
