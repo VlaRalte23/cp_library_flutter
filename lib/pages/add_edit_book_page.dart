@@ -1,11 +1,10 @@
 import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:library_chawnpui/helper/book_database.dart';
 import '../models/book.dart';
 
 class AddEditBookPage extends StatefulWidget {
-  final Book? book; // Null if adding a new book, otherwise editing existing
+  final Book? book; // Null = adding new book
 
   const AddEditBookPage({super.key, this.book});
 
@@ -20,46 +19,20 @@ class _AddEditBookPageState extends State<AddEditBookPage> {
   final _bookShelfController = TextEditingController();
   final _bookCopiesController = TextEditingController();
   final _authorController = TextEditingController();
-  bool _isIssued = false;
 
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
+
     if (widget.book != null) {
       _idController.text = widget.book!.id.toString();
       _bookNameController.text = widget.book!.name;
       _authorController.text = widget.book!.author;
-      _bookShelfController.text = widget.book!.bookshelf; // FIXED
+      _bookShelfController.text = widget.book!.bookshelf;
       _bookCopiesController.text = widget.book!.copies.toString();
-      _isIssued = widget.book!.isIssued;
     }
-  }
-
-  String formatDate(DateTime? date) {
-    if (date == null) return "Unknown";
-
-    const months = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ];
-
-    String day = date.day.toString().padLeft(2, '0');
-    String month = months[date.month - 1];
-    String year = date.year.toString();
-
-    return "$day $month $year"; // example: 05 Jan 2025
   }
 
   @override
@@ -68,6 +41,7 @@ class _AddEditBookPageState extends State<AddEditBookPage> {
     _bookNameController.dispose();
     _authorController.dispose();
     _bookShelfController.dispose();
+    _bookCopiesController.dispose();
     super.dispose();
   }
 
@@ -93,18 +67,15 @@ class _AddEditBookPageState extends State<AddEditBookPage> {
         bookshelf: bookShelf,
         copies: bookCopies,
         author: author,
-        isIssued: _isIssued,
       );
 
       try {
         final db = BookDatabase.instance;
 
         if (widget.book == null) {
-          // Add new book
           await db.insertBook(book);
           _showSnackBar('Book added successfully!');
         } else {
-          // Update existing book
           await db.updateBook(book);
           _showSnackBar('Book updated successfully!');
         }
@@ -112,7 +83,7 @@ class _AddEditBookPageState extends State<AddEditBookPage> {
         if (mounted) Navigator.pop(context);
       } catch (e) {
         _showSnackBar('Failed to save book: $e', isError: true);
-        log('Faild to update $e');
+        log('Failed to update $e');
       } finally {
         setState(() => _isLoading = false);
       }
@@ -146,16 +117,12 @@ class _AddEditBookPageState extends State<AddEditBookPage> {
           key: _formKey,
           child: ListView(
             children: <Widget>[
-              // ID manual entry tihna
               TextFormField(
                 controller: _idController,
                 keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: 'Lehkhabu Number',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  prefixIcon: const Icon(Icons.confirmation_number),
+                decoration: _input(
+                  'Lehkhabu Number',
+                  Icons.confirmation_number,
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -169,88 +136,43 @@ class _AddEditBookPageState extends State<AddEditBookPage> {
               ),
               const SizedBox(height: 16),
 
-              // Title Field
               TextFormField(
                 controller: _bookNameController,
-                decoration: InputDecoration(
-                  labelText: 'Lehkhabu Hming',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  prefixIcon: const Icon(Icons.book),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a title';
-                  }
-                  return null;
-                },
+                decoration: _input('Lehkhabu Hming', Icons.book),
+                validator: (value) => value == null || value.isEmpty
+                    ? 'Please enter a title'
+                    : null,
               ),
               const SizedBox(height: 16),
 
-              // Author Field
               TextFormField(
                 controller: _authorController,
-                decoration: InputDecoration(
-                  labelText: 'A Ziaktu',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  prefixIcon: const Icon(Icons.person),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter an author';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _bookCopiesController,
-                decoration: InputDecoration(
-                  labelText: 'Lehkhabu Neih Zat',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  prefixIcon: const Icon(Icons.numbers_rounded),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please Enter Number of Copy';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _bookShelfController,
-                decoration: InputDecoration(
-                  labelText: 'Lehkhabu Awmna',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  prefixIcon: const Icon(Icons.shelves),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter Book Shelf';
-                  }
-                  return null;
-                },
+                decoration: _input('A Ziaktu', Icons.person),
+                validator: (value) => value == null || value.isEmpty
+                    ? 'Please enter an author'
+                    : null,
               ),
               const SizedBox(height: 16),
 
-              // Is Issued Switch
-              SwitchListTile(
-                title: const Text('Is Issued?'),
-                value: _isIssued,
-                onChanged: (value) => setState(() => _isIssued = value),
-                secondary: const Icon(Icons.assignment),
+              TextFormField(
+                controller: _bookCopiesController,
+                keyboardType: TextInputType.number,
+                decoration: _input('Lehkhabu Neih Zat', Icons.numbers_rounded),
+                validator: (value) => value == null || value.isEmpty
+                    ? 'Please enter number of copies'
+                    : null,
+              ),
+              const SizedBox(height: 16),
+
+              TextFormField(
+                controller: _bookShelfController,
+                decoration: _input('Lehkhabu Awmna', Icons.shelves),
+                validator: (value) => value == null || value.isEmpty
+                    ? 'Please enter Bookshelf'
+                    : null,
               ),
               const SizedBox(height: 24),
 
-              // Save Button
               _isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : ElevatedButton.icon(
@@ -273,6 +195,14 @@ class _AddEditBookPageState extends State<AddEditBookPage> {
           ),
         ),
       ),
+    );
+  }
+
+  InputDecoration _input(String label, IconData icon) {
+    return InputDecoration(
+      labelText: label,
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+      prefixIcon: Icon(icon),
     );
   }
 }

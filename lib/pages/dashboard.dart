@@ -3,9 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:library_chawnpui/helper/book_database.dart';
 import 'package:library_chawnpui/helper/member_database.dart';
 import 'package:library_chawnpui/pages/book_page.dart';
-import 'package:library_chawnpui/pages/magazine_page.dart';
 import 'package:library_chawnpui/pages/member_page.dart';
-import 'package:library_chawnpui/pages/newspaper_page.dart';
 import 'package:library_chawnpui/pages/issued_page.dart';
 import 'package:library_chawnpui/pages/returned_page.dart';
 import 'package:library_chawnpui/pages/not_returned_page.dart';
@@ -20,23 +18,13 @@ class LibraryDashboardPage extends StatefulWidget {
 
 class _LibraryDashboardPageState extends State<LibraryDashboardPage> {
   int bookCount = 0;
-  int issuedCount = 0;
-  int returnCount = 0;
+  int issuedCount = 0;        // number of currently issued transactions
+  int returnCount = 0;        // number of returned transactions
+  int notReturnedCount = 0;   // number of overdue / not returned
   int memberCount = 0;
 
   final nowDate = DateTime.now();
   late final String formatDate;
-
-  final List<String> menuItems = [
-    "Dashboard",
-    "Members",
-    "Books",
-    "Magazines",
-    "Newspapers",
-    "Issued",
-    "Returned",
-    "Not Returned",
-  ];
 
   @override
   void initState() {
@@ -45,15 +33,23 @@ class _LibraryDashboardPageState extends State<LibraryDashboardPage> {
     _updateCounts();
   }
 
+  /// Fetch counts based on NEW schema (book_issues table)
   Future<void> _updateCounts() async {
     final books = await BookDatabase.instance.getBooks();
     final members = await MemberDatabase.instance.getMembers();
 
+    // Get counts from issues table
+    final issued = await BookDatabase.instance.getActiveIssuedCount();       // returnDate IS NULL
+    final returned = await BookDatabase.instance.getReturnedCount();         // returnDate IS NOT NULL
+    final notReturned = await BookDatabase.instance.getNotReturnedCount();   // overdue or unreturned
+
     setState(() {
       bookCount = books.length;
-      issuedCount = books.where((b) => b.isIssued).length;
-      returnCount = books.where((b) => !b.isIssued).length;
       memberCount = members.length;
+
+      issuedCount = issued;
+      returnCount = returned;
+      notReturnedCount = notReturned;
     });
   }
 
@@ -71,7 +67,7 @@ class _LibraryDashboardPageState extends State<LibraryDashboardPage> {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => targetPage),
-          ).then((_) => _updateCounts()); // 👈 Refresh counts after returning
+          ).then((_) => _updateCounts());
         },
         child: dashboardCard(title, value, icon, color),
       ),
@@ -104,97 +100,37 @@ class _LibraryDashboardPageState extends State<LibraryDashboardPage> {
               Colors.green,
               const MemberPage(),
             ),
-            // _dashboardItem(
-            //   "NewsPapers",
-            //   "1",
-            //   Icons.newspaper,
-            //   Colors.orange,
-            //   const NewspaperPage(),
-            // ),
-            // _dashboardItem(
-            //   "Magazines",
-            //   "0",
-            //   Icons.insert_drive_file,
-            //   Colors.red,
-            //   const MagazinePage(),
-            // ),
             _dashboardItem(
               "LEHKHABU HAWHTU",
               "$issuedCount",
-              Icons.flight,
+              Icons.local_shipping,
               Colors.lightBlue,
               const IssuedPage(),
             ),
             _dashboardItem(
               "RETURNED",
               "$returnCount",
-              Icons.thumb_up,
+              Icons.assignment_turned_in,
               Colors.redAccent,
               const ReturnedPage(),
             ),
             _dashboardItem(
               "NOT RETURNED",
-              "1",
-              Icons.thumb_down,
-              Colors.green,
+              "$notReturnedCount",
+              Icons.warning,
+              Colors.orange,
               const NotReturnedPage(),
             ),
             dashboardCard(
               "TODAY",
               formatDate,
               Icons.calendar_today,
-              Colors.orange,
+              Colors.deepPurple,
             ),
           ],
         );
       },
     );
-  }
-
-  void _handleDrawerTap(BuildContext context, String title) {
-    Navigator.pop(context); // Close drawer
-
-    if (title == "Dashboard") {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const LibraryDashboardPage()),
-      );
-    } else if (title == "Members") {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const MemberPage()),
-      ).then((_) => _updateCounts()); // 👈 refresh counts
-    } else if (title == "Books") {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const BookPage()),
-      ).then((_) => _updateCounts());
-    } else if (title == "Magazines") {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const MagazinePage()),
-      ).then((_) => _updateCounts());
-    } else if (title == "Newspapers") {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const NewspaperPage()),
-      ).then((_) => _updateCounts());
-    } else if (title == "Issued") {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const IssuedPage()),
-      ).then((_) => _updateCounts());
-    } else if (title == "Returned") {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const ReturnedPage()),
-      ).then((_) => _updateCounts());
-    } else if (title == "Not Returned") {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const NotReturnedPage()),
-      ).then((_) => _updateCounts());
-    }
   }
 
   @override
@@ -213,12 +149,56 @@ class _LibraryDashboardPageState extends State<LibraryDashboardPage> {
                 ],
               ),
             ),
-            ...menuItems.map(
-              (item) => ListTile(
-                leading: const Icon(Icons.chevron_right),
-                title: Text(item),
-                onTap: () => _handleDrawerTap(context, item),
-              ),
+            ListTile(
+              title: const Text("Dashboard"),
+              onTap: () {
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              title: const Text("Members"),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const MemberPage()),
+                ).then((_) => _updateCounts());
+              },
+            ),
+            ListTile(
+              title: const Text("Books"),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const BookPage()),
+                ).then((_) => _updateCounts());
+              },
+            ),
+            ListTile(
+              title: const Text("Issued"),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const IssuedPage()),
+                ).then((_) => _updateCounts());
+              },
+            ),
+            ListTile(
+              title: const Text("Returned"),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const ReturnedPage()),
+                ).then((_) => _updateCounts());
+              },
+            ),
+            ListTile(
+              title: const Text("Not Returned"),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const NotReturnedPage()),
+                ).then((_) => _updateCounts());
+              },
             ),
           ],
         ),

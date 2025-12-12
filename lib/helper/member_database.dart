@@ -78,15 +78,28 @@ class MemberDatabase {
     return await db.delete('members', where: 'id = ?', whereArgs: [id]);
   }
 
+    // Get single Member by ID
+  Future<Member?> getMemberById(int id) async {
+    final db = await instance.database;
+
+    final result = await db.query(
+      'members',
+      where: 'id = ?',
+      whereArgs: [id],
+      limit: 1,
+    );
+
+    if (result.isNotEmpty) {
+      return Member.fromMap(result.first);
+    }
+
+    return null;
+  }
+
+
   // Close Database
   Future close() async {
     final db = await instance.database;
     db.close();
   }
-}
-
-Future<Map<String, dynamic>?> getMemberById(int id) async {
-  final mdb = await MemberDatabase.instance.database;
-  final result = await mdb.query('members', where: 'id = ?', whereArgs: [id]);
-  return result.isNotEmpty ? result.first : null;
 }

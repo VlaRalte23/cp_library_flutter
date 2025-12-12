@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:library_chawnpui/helper/book_database.dart';
-import 'package:library_chawnpui/models/member.dart';
 import 'package:library_chawnpui/models/book.dart';
+import 'package:library_chawnpui/models/book_issue.dart';
+import 'package:library_chawnpui/models/member.dart';
 
 class MemberDetailPage extends StatefulWidget {
   final Member member;
+
   const MemberDetailPage({super.key, required this.member});
 
   @override
@@ -13,285 +15,211 @@ class MemberDetailPage extends StatefulWidget {
 }
 
 class _MemberDetailPageState extends State<MemberDetailPage> {
-  Future<List<Book>>? _issuedBooks;
+  List<BookIssue> issuedList = [];
+  Map<int, Book> bookMap = {};
+  bool loading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadIssuedBooks();
+    loadIssuedBooks();
   }
 
-  // Load issued books
-  void _loadIssuedBooks() {
+  Future<void> loadIssuedBooks() async {
+    setState(() => loading = true);
+
+    final issues = await BookDatabase.instance.getBooksIssuedTo(
+      widget.member.id!,
+    );
+    final allBooks = await BookDatabase.instance.getBooks();
+    bookMap = {for (var b in allBooks) b.id!: b};
+
     setState(() {
-      _issuedBooks = BookDatabase.instance.getBooksIssuedTo(widget.member.id!);
+      issuedList = issues;
+      loading = false;
     });
   }
 
-  String formatDate(DateTime? date) {
-    if (date == null) return "Unknown";
+  Future<void> _returnBook(BookIssue issue) async {
+    await BookDatabase.instance.returnBook(issue.id!);
+    await loadIssuedBooks();
+  }
 
-    const months = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ];
+  Future<void> _extendDueDate(BookIssue issue) async {
+    DateTime? newDate = await showDatePicker(
+      context: context,
+      initialDate: issue.dueDate,
+      firstDate: DateTime.now(),
+      lastDate: DateTime(2100),
+    );
 
-    String day = date.day.toString().padLeft(2, '0');
-    String month = months[date.month - 1];
-    String year = date.year.toString();
+    if (newDate != null) {
+      await BookDatabase.instance.extendDueDate(issue.id!, newDate);
+      await loadIssuedBooks();
+    }
+  }
 
-    return "$day $month $year"; // example: 05 Jan 2025
+  // --- Issue dialog / action ---
+  Future<void> _showIssueBookDialog(BuildContext ctx) async {
+    List<Book> available = await BookDatabase.instance.getAvailableBooks();
+
+    if (available.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(ctx).showSnackBar(
+        const SnackBar(content: Text('No available books to issue.')),
+      );
+      return;
+    }
+
+    Book? selected;
+    await showDialog(
+      context: ctx,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Select Book to Issue'),
+              content: SizedBox(
+                width: double.maxFinite,
+                child: DropdownButton<Book>(
+                  isExpanded: true,
+                  hint: const Text('Choose a book'),
+                  value: selected,
+                  items: available.map((b) {
+                    final availText = '(${b.copies} copies)';
+                    return DropdownMenuItem<Book>(
+                      value: b,
+                      child: Text('${b.name} — ${b.author} $availText'),
+                    );
+                  }).toList(),
+                  onChanged: (b) => setState(() => selected = b),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: selected == null
+                      ? null
+                      : () async {
+                          final res = await BookDatabase.instance.issueBook(
+                            selected!.id!,
+                            widget.member.id!,
+                          );
+                          if (mounted) {
+                            ScaffoldMessenger.of(
+                              context,
+                            ).showSnackBar(SnackBar(content: Text(res)));
+                          }
+                          Navigator.pop(context);
+                          await loadIssuedBooks();
+                        },
+                  child: const Text('Issue'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final member = widget.member;
+    final dateFormat = DateFormat('dd MMM yyyy');
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('${member.name} Details'),
+        title: Text(widget.member.name),
         backgroundColor: Colors.green,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Card(
-              margin: const EdgeInsets.only(bottom: 16),
-              child: ListTile(
-                leading: const Icon(
-                  Icons.person,
-                  color: Colors.green,
-                  size: 40,
-                ),
-                title: Text(
-                  member.name,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Phone: ${member.phone}'),
-                    Text(
-                      'Joined: ${member.joinedDate.toString().split(" ")[0]}',
-                    ),
-                    Text(
-                      'Valid Till: ${formatDate(member.validTill)}',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black,
-                      ),
-                    ),
-                    Text('Status: ${member.isActive ? "Active" : "Inactive"}'),
-                  ],
-                ),
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: Colors.green,
+        foregroundColor: Colors.black,
+        onPressed: () => _showIssueBookDialog(context),
+        icon: const Icon(Icons.add),
+        label: const Text('Issue Book'),
+      ),
+      body: loading
+          ? const Center(child: CircularProgressIndicator())
+          : issuedList.isEmpty
+          ? const Center(
+              child: Text(
+                'No books issued',
+                style: TextStyle(fontSize: 16, color: Colors.grey),
               ),
-            ),
+            )
+          : ListView.builder(
+              itemCount: issuedList.length,
+              itemBuilder: (context, index) {
+                final issue = issuedList[index];
+                final book = bookMap[issue.bookId];
+                if (book == null) {
+                  return const ListTile(title: Text('Book not found'));
+                }
 
-            const SizedBox(height: 16),
-            const Text(
-              'Issued Books',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const Divider(),
+                final isOverdue = issue.dueDate.isBefore(DateTime.now());
 
-            Expanded(
-              child: FutureBuilder<List<Book>>(
-                future: _issuedBooks,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  } else if (snapshot.hasError) {
-                    return Center(child: Text('Error: ${snapshot.error}'));
-                  } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return Center(
-                      child: Text(
-                        'No issued books yet',
-                        style: TextStyle(color: Colors.grey[600]),
-                      ),
-                    );
-                  }
-
-                  final books = snapshot.data!;
-                  return ListView.builder(
-                    itemCount: books.length,
-                    itemBuilder: (context, index) {
-                      final book = books[index];
-                      final isOverdue =
-                          book.dueDate != null &&
-                          book.dueDate!.isBefore(DateTime.now());
-
-                      return Card(
-                        color: isOverdue ? Colors.red.shade100 : Colors.white,
-                        margin: const EdgeInsets.symmetric(vertical: 4),
-                        child: ListTile(
-                          leading: Icon(
-                            Icons.book,
-                            color: isOverdue ? Colors.red : Colors.green,
-                          ),
-                          title: Text(
-                            book.name,
-                            style: const TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                          subtitle: Column(
+                return Card(
+                  margin: const EdgeInsets.all(12),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // LEFT SIDE (BOOK INFO)
+                        Expanded(
+                          child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Author: ${book.author}'),
-
-                              // Due date formatted
                               Text(
-                                "Due: ${book.dueDate != null ? DateFormat('dd MMM yyyy').format(book.dueDate!) : 'No date'}",
-                                style: TextStyle(
-                                  color: isOverdue ? Colors.red : Colors.black,
-                                  fontWeight: FontWeight.bold,
+                                book.name,
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
-
-                              // Extend Due Date button
-                              TextButton(
-                                onPressed: () async {
-                                  final selectedDate = await showDatePicker(
-                                    context: context,
-                                    initialDate: book.dueDate ?? DateTime.now(),
-                                    firstDate: DateTime.now(),
-                                    lastDate: DateTime.now().add(
-                                      const Duration(days: 365),
-                                    ),
-                                  );
-
-                                  if (selectedDate != null) {
-                                    await BookDatabase.instance.extendDueDate(
-                                      book.id,
-                                      selectedDate,
-                                    );
-                                    _loadIssuedBooks(); // refresh list
-                                  }
-                                },
-                                child: const Text("Extend Due Date"),
+                              const SizedBox(height: 4),
+                              Text('Ziaktu: ${book.author}'),
+                              Text(
+                                'Issued: ${dateFormat.format(issue.issuedDate)}',
+                              ),
+                              Text(
+                                'Due: ${dateFormat.format(issue.dueDate)}',
+                                style: TextStyle(
+                                  color: isOverdue ? Colors.red : Colors.black,
+                                ),
                               ),
                             ],
                           ),
+                        ),
 
-                          trailing: SizedBox(
-                            height: 70,
-                            width: 100,
-                            child: TextButton(
+                        // RIGHT SIDE (BUTTONS)
+                        Column(
+                          children: [
+                            TextButton(
+                              onPressed: () => _returnBook(issue),
                               child: const Text(
                                 'Return',
-                                style: TextStyle(fontSize: 18),
+                                style: TextStyle(fontSize: 14),
                               ),
-                              onPressed: () async {
-                                await BookDatabase.instance.returnBook(book.id);
-
-                                // Refresh and notify parent
-                                _loadIssuedBooks();
-                                setState(() {});
-                              },
                             ),
-                          ),
+                            SizedBox(height: 10),
+                            IconButton(
+                              icon: const Icon(Icons.date_range),
+                              tooltip: 'Extend',
+                              onPressed: () => _extendDueDate(issue),
+                            ),
+                          ],
                         ),
-                      );
-                    },
-                  );
-                },
-              ),
+                      ],
+                    ),
+                  ),
+                );
+              },
             ),
-          ],
-        ),
-      ),
-
-      // ISSUE BOOK BUTTON
-      floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: Colors.green,
-        icon: const Icon(Icons.add),
-        label: const Text("Issue Book"),
-        onPressed: () async {
-          _showIssueBookDialog(context, member.id!);
-        },
-      ),
-    );
-  }
-
-  // Show Issue Book dialog
-  void _showIssueBookDialog(BuildContext context, int memberId) async {
-    final books = await BookDatabase.instance.getBooks();
-    final availableBooks = books
-        .where((book) => book.issuedCount < book.copies)
-        .toList();
-
-    if (availableBooks.isEmpty) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("No available books to issue.")),
-        );
-      }
-      return;
-    }
-
-    Book? selectedBook;
-
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) {
-          return AlertDialog(
-            title: const Text("Select Book to Issue"),
-            content: SizedBox(
-              width: double.maxFinite,
-              child: DropdownButton<Book>(
-                isExpanded: true,
-                hint: const Text("Choose a book"),
-                value: selectedBook,
-                items: availableBooks.map((book) {
-                  return DropdownMenuItem<Book>(
-                    value: book,
-                    child: Text("${book.name} - ${book.author}"),
-                  );
-                }).toList(),
-                onChanged: (book) {
-                  setState(() => selectedBook = book);
-                },
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text("Cancel"),
-              ),
-              ElevatedButton(
-                onPressed: selectedBook == null
-                    ? null
-                    : () async {
-                        await BookDatabase.instance.issueBook(
-                          selectedBook!.id,
-                          memberId,
-                        );
-                        _loadIssuedBooks();
-
-                        if (context.mounted) {
-                          Navigator.pop(context, true);
-                        } // notify parent
-                      },
-                child: const Text("Issue"),
-              ),
-            ],
-          );
-        },
-      ),
     );
   }
 }

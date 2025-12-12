@@ -7,7 +7,10 @@ class ReturnedPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Returned Books'),
+        title: const Text(
+          'Lehkhabu Dah Let Ho',
+          style: TextStyle(fontWeight: FontWeight.w500),
+        ),
         backgroundColor: Colors.redAccent,
         leading: IconButton(
           onPressed: () {

@@ -18,18 +18,13 @@ class _BookPageState extends State<BookPage> {
   @override
   void initState() {
     super.initState();
-    _booksFuture = BookDatabase.instance.getBooks();
     _loadBooks();
   }
 
   Future<void> _loadBooks() async {
-    // final db = await BookDatabase.instance.database;
-    // final rows = await db.rawQuery("SELECT * FROM books");
-    // print('BOOKS TABLE ROWS:');
-    // print(rows);
-    _booksFuture = BookDatabase.instance.getBooks();
-    // final books = await _booksFuture;
-    // log(books.map((e) => e.toMap()).toList().toString());
+    setState(() {
+      _booksFuture = BookDatabase.instance.getBooks();
+    });
   }
 
   void _applyFilter(String filter) {
@@ -40,11 +35,17 @@ class _BookPageState extends State<BookPage> {
 
   List<Book> _filterBooks(List<Book> books) {
     List<Book> filtered = books;
+
+    // Filter: Issued
     if (_filter == 'Issued') {
-      filtered = filtered.where((b) => b.isIssued).toList();
-    } else if (_filter == 'Available') {
-      filtered = filtered.where((b) => !b.isIssued).toList();
+      filtered = filtered.where((b) => b.issuedCount > 0).toList();
     }
+    // Filter: Available
+    else if (_filter == 'Available') {
+      filtered = filtered.where((b) => (b.copies - b.issuedCount) > 0).toList();
+    }
+
+    // Search filter
     if (_searchQuery.isNotEmpty) {
       filtered = filtered
           .where(
@@ -54,6 +55,7 @@ class _BookPageState extends State<BookPage> {
           )
           .toList();
     }
+
     return filtered;
   }
 
@@ -63,21 +65,19 @@ class _BookPageState extends State<BookPage> {
       appBar: AppBar(
         title: const Text(
           'Lehkhabu List',
-          style: TextStyle(fontWeight: FontWeight.w400),
+          style: TextStyle(fontWeight: FontWeight.w500),
         ),
-        centerTitle: true,
+        centerTitle: true, 
         backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
+        foregroundColor: const Color.fromARGB(255, 0, 0, 0),
         leading: IconButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          onPressed: () => Navigator.pop(context),
           icon: const Icon(Icons.arrow_back),
         ),
       ),
       body: Column(
         children: [
-          // 🔍 Search Bar
+          // Search Bar
           Padding(
             padding: const EdgeInsets.all(10),
             child: TextField(
@@ -99,7 +99,7 @@ class _BookPageState extends State<BookPage> {
             ),
           ),
 
-          // Filter Buttons +  Add Button
+          // Filter Buttons + Add Button
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             child: Row(
@@ -121,9 +121,7 @@ class _BookPageState extends State<BookPage> {
                         builder: (_) => const AddEditBookPage(),
                       ),
                     );
-                    setState(() {
-                      _loadBooks();
-                    });
+                    _loadBooks();
                   },
                   icon: const Icon(Icons.add),
                   label: const Text('Add Book'),
@@ -139,7 +137,6 @@ class _BookPageState extends State<BookPage> {
             ),
           ),
 
-          // 📚 Book List
           Expanded(
             child: FutureBuilder<List<Book>>(
               future: _booksFuture,
@@ -160,12 +157,14 @@ class _BookPageState extends State<BookPage> {
                   return const Center(child: Text('No books found.'));
                 }
 
-                books.sort((a, b) => a.id.compareTo(b.id));
+                books.sort((a, b) => a.id!.compareTo(b.id!));
 
                 return ListView.builder(
                   itemCount: books.length,
                   itemBuilder: (context, index) {
                     final book = books[index];
+                    final available = book.copies - book.issuedCount;
+
                     return Card(
                       margin: const EdgeInsets.symmetric(
                         horizontal: 10,
@@ -188,26 +187,12 @@ class _BookPageState extends State<BookPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const SizedBox(height: 4),
-                            Text(
-                              'A Ziaktu: ${book.author}',
-                              style: const TextStyle(fontSize: 14),
-                            ),
-                            Text(
-                              'Lehkhabu Number: ${book.id}',
-                              style: const TextStyle(fontSize: 14),
-                            ),
-                            Text(
-                              'Lehkhabu Dahna: ${book.bookshelf}',
-                              style: const TextStyle(fontSize: 14),
-                            ),
-                            Text(
-                              'Copy/Copies: ${book.copies}',
-                              style: const TextStyle(fontSize: 14),
-                            ),
-                            Text(
-                              'Issued: ${book.isIssued ? 'Yes' : 'No'}',
-                              style: const TextStyle(fontSize: 14),
-                            ),
+                            Text('A Ziaktu: ${book.author}'),
+                            Text('Lehkhabu Number: ${book.id}'),
+                            Text('Lehkhabu Dahna: ${book.bookshelf}'),
+                            Text('Total Copies: ${book.copies}'),
+                            Text('Issued Copies: ${book.issuedCount}'),
+                            Text('Available Copies: $available'),
                           ],
                         ),
                         trailing: Row(
@@ -222,14 +207,13 @@ class _BookPageState extends State<BookPage> {
                                     builder: (_) => AddEditBookPage(book: book),
                                   ),
                                 );
-                                setState(() {
-                                  _loadBooks();
-                                });
+                                _loadBooks();
                               },
                             ),
                             IconButton(
                               icon: const Icon(Icons.delete, color: Colors.red),
-                              onPressed: () => _confirmDelete(context, book.id),
+                              onPressed: () =>
+                                  _confirmDelete(context, book.id!),
                             ),
                           ],
                         ),
@@ -280,7 +264,7 @@ class _BookPageState extends State<BookPage> {
                   await BookDatabase.instance.deleteBook(bookId);
                   if (context.mounted) {
                     _showSnackBar(context, 'Book deleted successfully!');
-                    setState(() => _loadBooks());
+                    _loadBooks();
                   }
                 } catch (e) {
                   if (context.mounted) {
@@ -300,6 +284,8 @@ class _BookPageState extends State<BookPage> {
   }
 
   void _showBookDetails(BuildContext context, Book book) {
+    final available = book.copies - book.issuedCount;
+
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
@@ -311,8 +297,9 @@ class _BookPageState extends State<BookPage> {
                 Text('A Ziaktu: ${book.author}'),
                 Text('Lehkhabu Number: ${book.id}'),
                 Text('Lehkhabu Dahna: ${book.bookshelf}'),
-                Text('Copy/Copies: ${book.copies}'),
-                Text('Issued: ${book.isIssued ? 'Yes' : 'No'}'),
+                Text('Total Copies: ${book.copies}'),
+                Text('Issued Copies: ${book.issuedCount}'),
+                Text('Available Copies: $available'),
               ],
             ),
           ),

@@ -81,7 +81,7 @@ class _MemberPageState extends State<MemberPage> {
       appBar: AppBar(
         title: const Text(
           'Member List',
-          style: TextStyle(fontWeight: FontWeight.w600),
+          style: TextStyle(fontWeight: FontWeight.w500),
         ),
         backgroundColor: Colors.green,
         leading: IconButton(
