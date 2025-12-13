@@ -9,6 +9,8 @@ import 'package:library_chawnpui/pages/member_page.dart';
 import 'package:library_chawnpui/pages/issued_page.dart';
 import 'package:library_chawnpui/pages/returned_page.dart';
 import 'package:library_chawnpui/pages/not_returned_page.dart';
+import 'package:library_chawnpui/pages/bulk_upload_page.dart';
+import 'package:library_chawnpui/pages/settings_page.dart';
 
 class LibraryDashboardPage extends StatefulWidget {
   const LibraryDashboardPage({super.key});
@@ -85,6 +87,10 @@ class _LibraryDashboardPageState extends State<LibraryDashboardPage> {
         return const NotReturnedPage();
       case 6:
         return _buildReportsContent();
+      case 7:
+        return const BulkUploadPage();
+      case 8:
+        return const SettingsPage();
       default:
         return _buildDashboardContent();
     }
@@ -104,6 +110,12 @@ class _LibraryDashboardPageState extends State<LibraryDashboardPage> {
         return 'Returned Books';
       case 5:
         return 'Overdue Books';
+      case 6:
+        return 'Reports';
+      case 7:
+        return 'Bulk Upload';
+      case 8:
+        return 'Settings';
       default:
         return 'Library Management System';
     }
@@ -192,6 +204,20 @@ class _LibraryDashboardPageState extends State<LibraryDashboardPage> {
                   'Reports',
                   isSmallScreen,
                   onTap: () => _onSidebarItemTap(6),
+                ),
+                _buildSidebarItem(
+                  7,
+                  Icons.upload_outlined,
+                  'Bulk Upload',
+                  isSmallScreen,
+                  onTap: () => _onSidebarItemTap(7),
+                ),
+                _buildSidebarItem(
+                  8,
+                  Icons.settings_outlined,
+                  'Settings',
+                  isSmallScreen,
+                  onTap: () => _onSidebarItemTap(8),
                 ),
               ],
             ),
