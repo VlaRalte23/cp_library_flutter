@@ -1,4 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
+import 'dart:io';
+import 'package:library_chawnpui/helper/book_database.dart';
+import 'package:library_chawnpui/models/book.dart';
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:path_provider/path_provider.dart';
 
 class BulkUploadPage extends StatefulWidget {
   const BulkUploadPage({super.key});
@@ -9,6 +15,15 @@ class BulkUploadPage extends StatefulWidget {
 
 class _BulkUploadPageState extends State<BulkUploadPage> {
   static const Color primaryColor = Color(0xFF313647);
+
+  String? _selectedBookFile;
+  String? _selectedBookContent; // Store file content
+  String? _selectedMemberFile;
+  bool _isUploadingBooks = false;
+  String? _uploadStatus;
+  int _totalRecords = 0;
+  int _successRecords = 0;
+  int _failedRecords = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -137,9 +152,7 @@ class _BulkUploadPageState extends State<BulkUploadPage> {
           const SizedBox(height: 24),
           // Upload Area
           InkWell(
-            onTap: () {
-              // TODO: Implement file picker
-            },
+            onTap: isBooks ? _pickBookFile : null, // Members later
             borderRadius: BorderRadius.circular(8),
             child: Container(
               height: 200,
@@ -147,7 +160,11 @@ class _BulkUploadPageState extends State<BulkUploadPage> {
                 color: Colors.grey.shade50,
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: Colors.grey.shade300,
+                  color:
+                      (isBooks && _selectedBookFile != null) ||
+                          (!isBooks && _selectedMemberFile != null)
+                      ? color
+                      : Colors.grey.shade300,
                   style: BorderStyle.solid,
                   width: 2,
                 ),
@@ -156,28 +173,58 @@ class _BulkUploadPageState extends State<BulkUploadPage> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      Icons.cloud_upload_outlined,
-                      size: 48,
-                      color: Colors.grey.shade400,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Click to upload CSV file',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey.shade600,
-                        fontWeight: FontWeight.w500,
+                    if ((isBooks && _selectedBookFile == null) ||
+                        (!isBooks && _selectedMemberFile == null)) ...[
+                      Icon(
+                        Icons.cloud_upload_outlined,
+                        size: 48,
+                        color: Colors.grey.shade400,
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'or drag and drop',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey.shade500,
+                      const SizedBox(height: 16),
+                      Text(
+                        'Click to upload CSV file',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey.shade600,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'or drag and drop',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade500,
+                        ),
+                      ),
+                    ] else ...[
+                      Icon(Icons.check_circle, size: 48, color: color),
+                      const SizedBox(height: 16),
+                      Text(
+                        'File Selected',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: color,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Text(
+                          isBooks
+                              ? _selectedBookFile ?? ''
+                              : _selectedMemberFile ?? '',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -215,7 +262,7 @@ class _BulkUploadPageState extends State<BulkUploadPage> {
                 const SizedBox(height: 12),
                 if (isBooks)
                   Text(
-                    'Columns: name, author, bookshelf, copies\nExample: "The Great Gatsby","F. Scott Fitzgerald","A1",5',
+                    'Required columns: ID, SERIAL NO, BOOK TITLE, AUTHOR, NO OF COPIES, BOOK SHELF LOCATION\n\nThe CSV should have headers. ID will be the book ID in the database.',
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.grey.shade700,
@@ -240,9 +287,9 @@ class _BulkUploadPageState extends State<BulkUploadPage> {
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () {
-                    // TODO: Download template
-                  },
+                  onPressed: isBooks
+                      ? _downloadBookTemplate
+                      : null, // Members later
                   icon: const Icon(Icons.download, size: 18),
                   label: const Text('Download Template'),
                   style: OutlinedButton.styleFrom(
@@ -258,11 +305,26 @@ class _BulkUploadPageState extends State<BulkUploadPage> {
               const SizedBox(width: 12),
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: () {
-                    // TODO: Process upload
-                  },
-                  icon: const Icon(Icons.upload, size: 18),
-                  label: const Text('Upload File'),
+                  onPressed: isBooks
+                      ? (_selectedBookFile != null && !_isUploadingBooks
+                            ? _uploadBooks
+                            : null)
+                      : null, // Members later
+                  icon: _isUploadingBooks && isBooks
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(Icons.upload, size: 18),
+                  label: Text(
+                    _isUploadingBooks && isBooks
+                        ? 'Uploading...'
+                        : 'Upload File',
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: color,
                     foregroundColor: Colors.white,
@@ -275,6 +337,288 @@ class _BulkUploadPageState extends State<BulkUploadPage> {
                 ),
               ),
             ],
+          ),
+          // Upload Status
+          if (isBooks && _uploadStatus != null && !_isUploadingBooks) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: _failedRecords > 0
+                    ? Colors.orange.shade50
+                    : Colors.green.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: _failedRecords > 0
+                      ? Colors.orange.shade200
+                      : Colors.green.shade200,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        _failedRecords > 0
+                            ? Icons.warning_amber_rounded
+                            : Icons.check_circle,
+                        size: 20,
+                        color: _failedRecords > 0
+                            ? Colors.orange.shade700
+                            : Colors.green.shade700,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _uploadStatus!,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: _failedRecords > 0
+                                ? Colors.orange.shade900
+                                : Colors.green.shade900,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (_totalRecords > 0) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      'Total: $_totalRecords | Success: $_successRecords | Failed: $_failedRecords',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // File picker for books CSV
+  Future<void> _pickBookFile() async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['csv'],
+        withData: true, // Read file data directly instead of path
+      );
+
+      if (result != null && result.files.single.bytes != null) {
+        // Store the file data as string
+        final bytes = result.files.single.bytes!;
+        final content = String.fromCharCodes(bytes);
+
+        setState(() {
+          _selectedBookFile = result.files.single.name;
+          _selectedBookContent = content;
+          _uploadStatus = null;
+          _totalRecords = 0;
+          _successRecords = 0;
+          _failedRecords = 0;
+        });
+      }
+    } catch (e) {
+      _showErrorDialog('Error picking file: $e');
+    }
+  }
+
+  // Download book CSV template
+  Future<void> _downloadBookTemplate() async {
+    try {
+      // Load the template from assets
+      final csvData = await rootBundle.loadString('assets/books_template.csv');
+
+      // Get the downloads directory
+      final directory = await getDownloadsDirectory();
+      if (directory == null) {
+        _showErrorDialog('Could not access Downloads folder');
+        return;
+      }
+
+      // Create file path
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final filePath = '${directory.path}/books_template_$timestamp.csv';
+      final file = File(filePath);
+
+      // Write the template content
+      await file.writeAsString(csvData);
+
+      // Show success message
+      _showSuccessDialog(
+        'Template downloaded successfully!\n\nSaved to:\n$filePath',
+      );
+    } catch (e) {
+      _showErrorDialog('Error downloading template: $e');
+    }
+  }
+
+  // Upload and process books CSV
+  Future<void> _uploadBooks() async {
+    if (_selectedBookContent == null) return;
+
+    setState(() {
+      _isUploadingBooks = true;
+      _uploadStatus = null;
+      _totalRecords = 0;
+      _successRecords = 0;
+      _failedRecords = 0;
+    });
+
+    try {
+      final lines = _selectedBookContent!.split('\n');
+
+      // Skip header row
+      final dataLines = lines
+          .skip(1)
+          .where((line) => line.trim().isNotEmpty)
+          .toList();
+
+      setState(() {
+        _totalRecords = dataLines.length;
+      });
+
+      for (var line in dataLines) {
+        try {
+          // Parse CSV line (handle quoted values)
+          final values = _parseCSVLine(line);
+
+          if (values.length < 6) {
+            _failedRecords++;
+            continue;
+          }
+
+          // Map CSV columns to Book model
+          // CSV: SI. No (ID), SERIAL NO. (BOOK ID), LEHKHABU HMING (BOOK TITLE),
+          //      ZIAKTU (AUTHOR), COPY NEIH ZAT (NO OF COPIES), AWMNA (BOOKSHELF)
+
+          final id = int.tryParse(values[0].trim());
+          final title = values[2].trim();
+          final author = values[3].trim();
+          final copies = int.tryParse(values[4].trim()) ?? 0;
+          final bookshelf = values[5].trim();
+
+          if (id == null || title.isEmpty || author.isEmpty) {
+            _failedRecords++;
+            continue;
+          }
+
+          // Create book object
+          final book = Book(
+            id: id,
+            name: title,
+            author: author,
+            bookshelf: bookshelf,
+            copies: copies,
+            issuedCount: 0,
+          );
+
+          // Insert into database
+          await BookDatabase.instance.insertBook(book);
+          _successRecords++;
+        } catch (e) {
+          _failedRecords++;
+        }
+      }
+
+      setState(() {
+        _isUploadingBooks = false;
+        if (_failedRecords == 0) {
+          _uploadStatus = 'All books uploaded successfully!';
+        } else {
+          _uploadStatus = 'Upload completed with some errors';
+        }
+        _selectedBookFile = null;
+        _selectedBookContent = null;
+      });
+
+      if (_successRecords > 0) {
+        _showSuccessDialog(
+          'Books uploaded successfully!\n\n'
+          'Total: $_totalRecords\n'
+          'Success: $_successRecords\n'
+          'Failed: $_failedRecords',
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _isUploadingBooks = false;
+        _uploadStatus = 'Upload failed: $e';
+      });
+      _showErrorDialog('Error uploading books: $e');
+    }
+  }
+
+  // Parse CSV line handling quoted values
+  List<String> _parseCSVLine(String line) {
+    List<String> result = [];
+    StringBuffer current = StringBuffer();
+    bool inQuotes = false;
+
+    for (int i = 0; i < line.length; i++) {
+      final char = line[i];
+
+      if (char == '"') {
+        inQuotes = !inQuotes;
+      } else if (char == ',' && !inQuotes) {
+        result.add(current.toString());
+        current.clear();
+      } else {
+        current.write(char);
+      }
+    }
+
+    result.add(current.toString());
+    return result;
+  }
+
+  // Show success dialog
+  void _showSuccessDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.green),
+            SizedBox(width: 8),
+            Text('Success'),
+          ],
+        ),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Show error dialog
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.error, color: Colors.red),
+            SizedBox(width: 8),
+            Text('Error'),
+          ],
+        ),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
           ),
         ],
       ),
