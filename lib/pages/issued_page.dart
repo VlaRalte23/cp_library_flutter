@@ -606,10 +606,14 @@ class _IssuedPageState extends State<IssuedPage> {
 
   Future<void> _extendDueDate(Map<String, dynamic> issue) async {
     final currentDueDate = DateTime.parse(issue['dueDate']);
+    final now = DateTime.now();
+    // Use the later date between currentDueDate and now as initialDate
+    final initialDate = currentDueDate.isAfter(now) ? currentDueDate : now;
+
     final newDate = await showDatePicker(
       context: context,
-      initialDate: currentDueDate,
-      firstDate: DateTime.now(),
+      initialDate: initialDate,
+      firstDate: now,
       lastDate: DateTime(2100),
     );
 
